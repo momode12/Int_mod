@@ -9,16 +9,14 @@ const ChatWelcome = () => {
       <div className="w-16 h-16 rounded-full bg-primary-500 flex items-center justify-center">
         <MessageSquare size={32} className="text-white" />
       </div>
-
       <div className="text-center">
         <h2 className="text-xl font-bold text-secondary-800 dark:text-dark-text mb-2">
-          Bienvenue sur ChatBot IA
+          Tonga soa ao amin'ny ChatBot IA
         </h2>
         <p className="text-sm text-secondary-500 dark:text-dark-text-muted max-w-sm">
-          Démarrez une nouvelle conversation pour commencer à discuter avec l'IA.
+          Atombohy resaka vaovao hifandraisan'ny amin'ny AI.
         </p>
       </div>
-
       <button
         onClick={newConversation}
         className="
@@ -26,7 +24,7 @@ const ChatWelcome = () => {
           text-white text-sm font-medium transition-colors
         "
       >
-        Nouvelle conversation
+        Resaka vaovao
       </button>
     </div>
   );

@@ -1,23 +1,30 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { useToast } from "../hooks/useToast";
 import { validateRegisterForm } from "../utils/validateForm";
 import type { FormErrors } from "../utils/validateForm";
+import { toast } from "../utils/sweetalert";
+
 import AuthLayout from "../components/layout/AuthLayout";
 import Button from "../components/ui/button";
 import Input from "../components/ui/input";
 import Separator from "../components/ui/separator";
+import PasswordField from "../components/ui/PasswordField";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const { register, isLoading } = useAuth();
-  const { showToast } = useToast();
 
   const [form, setForm] = useState({
-    name: "", email: "", password: "", confirm: "",
+    name: "",
+    email: "",
+    password: "",
+    confirm: "",
   });
+
   const [errors, setErrors] = useState<FormErrors>({});
+  const [showPass, setShowPass] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -26,19 +33,29 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const validation = validateRegisterForm(
-      form.name, form.email, form.password, form.confirm
+      form.name,
+      form.email,
+      form.password,
+      form.confirm
     );
+
     if (Object.keys(validation).length > 0) {
       setErrors(validation);
       return;
     }
+
     try {
       await register(form.name, form.email, form.password);
-      showToast("Vita ny fanoratana anarana !", "success");
+      toast("Vita ny fanoratana anarana !", "success");
       navigate("/chat");
-    } catch {
-      showToast("Nisy hadisoana, avereno !", "error");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Nisy hadisoana, avereno !";
+      toast(message, "error");
     }
   };
 
@@ -64,6 +81,7 @@ const RegisterPage = () => {
             onChange={handleChange}
             error={errors.name}
           />
+
           <Input
             label="Email"
             name="email"
@@ -73,25 +91,28 @@ const RegisterPage = () => {
             onChange={handleChange}
             error={errors.email}
           />
-          <Input
-            label="Teny miafina"
+
+          <PasswordField
             name="password"
-            type="password"
-            placeholder="••••••••"
+            label="Teny miafina"
             value={form.password}
-            onChange={handleChange}
+            show={showPass}
+            toggleShow={() => setShowPass((p) => !p)}
             error={errors.password}
-          />
-          <Input
-            label="Avereno ny teny miafina"
-            name="confirm"
-            type="password"
-            placeholder="••••••••"
-            value={form.confirm}
             onChange={handleChange}
-            error={errors.confirm}
           />
-          <Button type="submit" fullWidth isLoading={isLoading}>
+
+          <PasswordField
+            name="confirm"
+            label="Avereno ny teny miafina"
+            value={form.confirm}
+            show={showConfirm}
+            toggleShow={() => setShowConfirm((p) => !p)}
+            error={errors.confirm}
+            onChange={handleChange}
+          />
+
+          <Button type="submit" className="cursor-pointer" fullWidth isLoading={isLoading}>
             Mamorona ny kaontiko
           </Button>
         </form>
@@ -102,7 +123,7 @@ const RegisterPage = () => {
           Manana kaonty sahady ?{" "}
           <Link
             to="/login"
-            className="text-primary-500 hover:text-primary-600 font-medium"
+            className="text-primary-500 hover:text-primary-600 font-medium cursor-pointer"
           >
             Hiditra
           </Link>

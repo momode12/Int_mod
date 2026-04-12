@@ -29,10 +29,10 @@ const HomePage = () => {
               </Button>
             ) : (
               <>
-                <Button variant="ghost" onClick={() => navigate("/login")}>
+                <Button variant="ghost" className="cursor-pointer" onClick={() => navigate("/login")}>
                   Hiditra
                 </Button>
-                <Button onClick={() => navigate("/register")}>
+                <Button className="cursor-pointer" onClick={() => navigate("/register")}>
                   Misoratra anarana
                 </Button>
               </>
@@ -58,6 +58,7 @@ const HomePage = () => {
           <div className="flex items-center gap-3 mt-2">
             <Button
               size="lg"
+              className="cursor-pointer"
               onClick={() => navigate(isAuthenticated ? "/chat" : "/register")}
             >
               Manomboka maimaimpoana
@@ -66,6 +67,7 @@ const HomePage = () => {
             <Button
               size="lg"
               variant="outline"
+              className="cursor-pointer"
               onClick={() => navigate("/login")}
             >
               Hiditra

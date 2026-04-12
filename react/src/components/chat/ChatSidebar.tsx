@@ -43,7 +43,7 @@ const ChatSidebar = () => {
             className="
               w-full flex items-center gap-2 px-3 py-2 rounded-lg
               bg-primary-500 hover:bg-primary-600 text-white
-              text-sm font-medium transition-colors
+              text-sm font-medium transition-colors cursor-pointer
             "
           >
             <Plus size={16} />

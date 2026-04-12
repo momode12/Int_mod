@@ -12,29 +12,20 @@ interface UIStore {
   setLoading: (value: boolean) => void;
 }
 
-const applyTheme = (theme: Theme) => {
-  document.documentElement.classList.remove("light", "dark");
-  document.documentElement.classList.add(theme);
-  localStorage.setItem("theme", theme);
-};
-
 const getInitialTheme = (): Theme => {
+  if (typeof window === "undefined") return "light";
   return (localStorage.getItem("theme") as Theme) || "light";
 };
 
 export const useUIStore = create<UIStore>((set) => ({
-  theme: (() => {
-    const initial = getInitialTheme();
-    applyTheme(initial);
-    return initial;
-  })(),
-  isSidebarOpen: true,
+  theme: getInitialTheme(),
+  isSidebarOpen: false, // mobile-first
   isLoading: false,
 
   toggleTheme: () =>
     set((state) => {
       const next = state.theme === "light" ? "dark" : "light";
-      applyTheme(next);
+      localStorage.setItem("theme", next);
       return { theme: next };
     }),
 

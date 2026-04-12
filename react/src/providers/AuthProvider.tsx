@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AuthContext } from "./authContext";
 import type { ReactNode } from "react";
 import type { AuthContextType } from "./authContext";
+import { api } from "../utils/api";
 
 interface User {
   id: string;
@@ -26,9 +27,16 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const fakeUser: User = { id: "1", name: "Utilisateur", email };
-      localStorage.setItem("user", JSON.stringify(fakeUser));
-      setUser(fakeUser);
+      // ✅ Utilise api.ts — URL centralisée
+      const data = await api.post<{ token: string; user: User }>(
+        "/auth/login",
+        { email, password }
+      );
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      setUser(data.user);
+
     } finally {
       setIsLoading(false);
     }
@@ -37,9 +45,16 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
-      const fakeUser: User = { id: "1", name, email };
-      localStorage.setItem("user", JSON.stringify(fakeUser));
-      setUser(fakeUser);
+      // ✅ Utilise api.ts — URL centralisée
+      const data = await api.post<{ token: string; user: User }>(
+        "/auth/register",
+        { name, email, password }
+      );
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      setUser(data.user);
+
     } finally {
       setIsLoading(false);
     }

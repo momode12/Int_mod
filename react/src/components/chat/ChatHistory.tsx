@@ -8,20 +8,20 @@ const ChatHistory = () => {
     return (
       <div className="flex flex-col items-center justify-center h-32 text-secondary-400 dark:text-dark-text-muted text-sm gap-2">
         <MessageSquare size={24} />
-        <span>Aucune conversation</span>
+        <span>Tsy misy resaka</span>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-1 p-2">
-      {conversations.map((conversation: typeof conversations[0]) => (
+      {conversations.map((conversation) => (
         <button
           key={conversation.id}
           onClick={() => selectConversation(conversation.id)}
           className={`
             flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left
-            transition-colors group w-full
+            transition-colors w-full cursor-pointer
             ${currentConversation?.id === conversation.id
               ? "bg-sidebar-active text-white"
               : "text-sidebar-text hover:bg-sidebar-hover"}

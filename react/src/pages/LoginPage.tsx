@@ -1,21 +1,22 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { useToast } from "../hooks/useToast";
 import { validateLoginForm } from "../utils/validateForm";
 import type { FormErrors } from "../utils/validateForm";
+import { toast } from "../utils/sweetalert";
 import AuthLayout from "../components/layout/AuthLayout";
 import Button from "../components/ui/button";
 import Input from "../components/ui/input";
 import Separator from "../components/ui/separator";
+import PasswordField from "../components/ui/PasswordField";
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const { login, isLoading } = useAuth();
-  const { showToast } = useToast();
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<FormErrors>({});
+  const [showPass, setShowPass] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -24,17 +25,23 @@ const LoginPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const validation = validateLoginForm(form.email, form.password);
     if (Object.keys(validation).length > 0) {
       setErrors(validation);
       return;
     }
+
     try {
       await login(form.email, form.password);
-      showToast("Tafiditra soa aman-tsara !", "success");
+      toast("Tafiditra soa aman-tsara !", "success");
       navigate("/chat");
-    } catch {
-      showToast("Diso ny email na ny teny miafina", "error");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Diso ny email na ny teny miafina";
+      toast(message, "error");
     }
   };
 
@@ -60,16 +67,18 @@ const LoginPage = () => {
             onChange={handleChange}
             error={errors.email}
           />
-          <Input
-            label="Teny miafina"
+
+          <PasswordField
             name="password"
-            type="password"
-            placeholder="••••••••"
+            label="Teny miafina"
             value={form.password}
-            onChange={handleChange}
+            show={showPass}
+            toggleShow={() => setShowPass((p) => !p)}
             error={errors.password}
+            onChange={handleChange}
           />
-          <Button type="submit" fullWidth isLoading={isLoading}>
+
+          <Button type="submit" className="cursor-pointer" fullWidth isLoading={isLoading}>
             Hiditra
           </Button>
         </form>
@@ -80,7 +89,7 @@ const LoginPage = () => {
           Tsy manana kaonty ?{" "}
           <Link
             to="/register"
-            className="text-primary-500 hover:text-primary-600 font-medium"
+            className="text-primary-500 hover:text-primary-600 font-medium cursor-pointer"
           >
             Misoratra anarana
           </Link>
