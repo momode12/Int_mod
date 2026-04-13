@@ -18,7 +18,7 @@ const ChatWindow = () => {
     <div className="flex-1 overflow-y-auto bg-chat-background dark:bg-dark-background py-4">
       {messages.length === 0 ? (
         <div className="flex items-center justify-center h-full text-secondary-400 dark:text-dark-text-muted text-sm">
-          Envoyez un message pour commencer
+          Mandefasa hafatra hanombohana
         </div>
       ) : (
         <div className="flex flex-col gap-2 max-w-4xl mx-auto">

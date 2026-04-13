@@ -4,9 +4,27 @@ from pymongo import MongoClient
 from config import Config
 from models.user_models import create_user_collection
 from routes import api_bp
+from flasgger import Swagger
 
 def create_app():
+    
     app = Flask(__name__)
+    
+    Swagger(app, template={
+    "swagger": "2.0",
+    "info": {
+        "title": "ChatBot API",
+        "version": "1.0"
+    },
+    "securityDefinitions": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": "Format: Bearer <token>"
+        }
+    }
+})
     CORS(app, 
          resources={r"/*": {
              "origins": ["http://localhost:3000", "http://localhost:5173"],

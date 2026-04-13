@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
-import Footer from "./Footer";
 
 interface ChatLayoutProps {
   children: ReactNode;
@@ -23,9 +22,6 @@ const ChatLayout = ({ children }: ChatLayoutProps) => {
           {children}
         </main>
       </div>
-
-      {/* Footer */}
-      <Footer />
     </div>
   );
 };

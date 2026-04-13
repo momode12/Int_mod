@@ -11,7 +11,7 @@ const ChatWelcome = () => {
       </div>
       <div className="text-center">
         <h2 className="text-xl font-bold text-secondary-800 dark:text-dark-text mb-2">
-          Tonga soa ao amin'ny ChatBot IA
+          Tonga soa eto amin'ny ChatBot IA
         </h2>
         <p className="text-sm text-secondary-500 dark:text-dark-text-muted max-w-sm">
           Atombohy resaka vaovao hifandraisan'ny amin'ny AI.
