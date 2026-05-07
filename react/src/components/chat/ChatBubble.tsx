@@ -18,7 +18,7 @@ const ChatBubble = ({ content, role, createdAt, name }: ChatBubbleProps) => {
       <div className={`flex flex-col gap-1 max-w-[75%] ${isUser ? "items-end" : "items-start"}`}>
         <div
           className={`
-            px-4 py-2 rounded-2xl text-sm leading-relaxed
+            px-4 py-2 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap
             ${isUser
               ? "bg-chat-user-bubble text-chat-user-text rounded-tr-sm dark:bg-dark-user-bubble"
               : "bg-chat-bot-bubble text-chat-bot-text rounded-tl-sm dark:bg-dark-bot-bubble dark:text-dark-text"}

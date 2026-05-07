@@ -19,8 +19,8 @@ export interface ChatContextType {
   messages: Message[];
   isTyping: boolean;
   sendMessage: (content: string) => Promise<void>;
-  newConversation: () => void;
-  selectConversation: (id: string) => void;
+  newConversation: () => Promise<void>;
+  selectConversation: (id: string) => Promise<void>;
 }
 
 export const ChatContext = createContext<ChatContextType | undefined>(undefined);
