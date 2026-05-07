@@ -3,10 +3,12 @@ import { useUIStore } from "../../store/uiStore";
 import { Menu, Moon, Sun, LogOut, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast, confirm } from "../../utils/sweetalert";
+import { useThemeContext } from "../../providers/themeContext";
 
 const Header = () => {
   const { user, logout } = useAuth();
-  const { theme, toggleTheme, toggleSidebar } = useUIStore();
+  const { theme, toggleTheme } = useThemeContext();
+  const { toggleSidebar, toggleSidebarCollapsed } = useUIStore();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -29,7 +31,13 @@ const Header = () => {
     ">
       <div className="flex items-center gap-3">
         <button
-          onClick={toggleSidebar}
+          onClick={() => {
+            if (typeof window !== "undefined" && window.innerWidth >= 1024) {
+              toggleSidebarCollapsed();
+              return;
+            }
+            toggleSidebar();
+          }}
           title="Asehoy/Afeno ny sisiny"
           className="text-secondary-500 cursor-pointer hover:text-secondary-800 dark:text-dark-text-muted dark:hover:text-dark-text transition-colors"
         >

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from bson import ObjectId
 
 from models.conversation_models import conversation_schema, message_schema
@@ -9,6 +9,14 @@ from services.chatbot_service   import (
     CATEGORY_LABELS_FR,
 )
 
+MSK = timezone(timedelta(hours=3))
+
+
+def _format_dt(dt: datetime) -> str:
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(MSK).isoformat()
+
 
 def create_conversation(db, user_id: str, nom_conversation: str) -> dict:
     conv   = conversation_schema(ObjectId(user_id), nom_conversation)
@@ -17,7 +25,8 @@ def create_conversation(db, user_id: str, nom_conversation: str) -> dict:
     return {
         "id"              : str(result.inserted_id),
         "nom_conversation": nom_conversation,
-        "created_at"      : conv["created_at"].isoformat(),
+        "created_at"      : _format_dt(conv["created_at"]),
+        "updated_at"      : _format_dt(conv["updated_at"]),
     }
 
 
@@ -30,8 +39,8 @@ def get_conversations(db, user_id: str) -> list:
         {
             "id"              : str(c["_id"]),
             "nom_conversation": c["nom_conversation"],
-            "created_at"      : c["created_at"].isoformat(),
-            "updated_at"      : c["updated_at"].isoformat(),
+            "created_at"      : _format_dt(c["created_at"]),
+            "updated_at"      : _format_dt(c["updated_at"]),
         }
         for c in convs
     ]
@@ -52,8 +61,8 @@ def get_conversation_by_id(db, conversation_id: str, user_id: str) -> dict:
     return {
         "id"              : str(conv["_id"]),
         "nom_conversation": conv["nom_conversation"],
-        "created_at"      : conv["created_at"].isoformat(),
-        "updated_at"      : conv["updated_at"].isoformat(),
+        "created_at"      : _format_dt(conv["created_at"]),
+        "updated_at"      : _format_dt(conv["updated_at"]),
         "messages"        : [_format_message(m) for m in messages],
     }
 
@@ -128,7 +137,7 @@ def send_message(db, conversation_id: str, user_id: str, texte: str) -> dict:
             "top3"       : result["top3"],
             "alerte"     : result["alerte"],
             "fallback"   : result["fallback"],
-            "created_at" : msg["created_at"].isoformat(),
+            "created_at" : _format_dt(msg["created_at"]),
         }
 
     # Appel IA
@@ -158,7 +167,7 @@ def send_message(db, conversation_id: str, user_id: str, texte: str) -> dict:
         "top3"       : result["top3"],
         "alerte"     : result["alerte"],
         "fallback"   : result["fallback"],
-        "created_at" : msg["created_at"].isoformat(),
+        "created_at" : _format_dt(msg["created_at"]),
     }
 
 
@@ -196,5 +205,5 @@ def _format_message(m: dict) -> dict:
         "top3"       : m.get("top3"),
         "alerte"     : m.get("alerte"),
         "fallback"   : m.get("fallback"),
-        "created_at" : m["created_at"].isoformat(),
+        "created_at" : _format_dt(m["created_at"]),
     }

@@ -26,6 +26,14 @@ export const formatTime = (date: Date): string => {
   }).format(new Date(date));
 };
 
+export const formatTimeMoscow = (date: Date): string => {
+  return new Intl.DateTimeFormat("fr-FR", {
+    hour:     "2-digit",
+    minute:   "2-digit",
+    timeZone: "Europe/Moscow",
+  }).format(new Date(date));
+};
+
 export const formatFullDate = (date: Date): string => {
   return new Intl.DateTimeFormat("fr-FR", {
     day:    "2-digit",

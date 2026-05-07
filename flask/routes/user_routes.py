@@ -94,17 +94,40 @@ def update_profile():
     """
     try:
         data = request.get_json()
-        name = data.get("name", "").strip()
+        name  = data.get("name", "").strip()
+        email = data.get("email", "").strip().lower()
 
-        if not name:
-            return jsonify({"message": "Nom requis"}), 400
+        if not name and not email:
+            return jsonify({"message": "Nom ou email requis"}), 400
 
         db = current_app.db
+        updates = {"updated_at": datetime.utcnow()}
+        if name:
+            updates["name"] = name
+
+        if email and email != request.user.get("email"):
+            existing = db.users.find_one({
+                "email": email,
+                "_id"  : {"$ne": request.user["_id"]},
+            })
+            if existing:
+                return jsonify({"message": "Email déjà utilisé"}), 409
+            updates["email"] = email
+
         db.users.update_one(
             {"_id": request.user["_id"]},
-            {"$set": {"name": name, "updated_at": datetime.utcnow()}}
+            {"$set": updates}
         )
-        return jsonify({"message": "Profil mis à jour", "name": name}), 200
+
+        updated = db.users.find_one({"_id": request.user["_id"]})
+        return jsonify({
+            "message": "Profil mis à jour",
+            "user": {
+                "id"   : str(updated["_id"]),
+                "name" : updated.get("name"),
+                "email": updated.get("email"),
+            }
+        }), 200
 
     except Exception as e:
         return jsonify({"message": str(e)}), 500

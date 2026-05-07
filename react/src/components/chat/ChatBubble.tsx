@@ -1,5 +1,5 @@
 import ChatAvatar from "./ChatAvatar";
-import { formatDate } from "../../utils/formatDate";
+import { formatTimeMoscow } from "../../utils/formatDate";
 
 interface ChatBubbleProps {
   content: string;
@@ -27,7 +27,7 @@ const ChatBubble = ({ content, role, createdAt, name }: ChatBubbleProps) => {
           {content}
         </div>
         <span className="text-xs text-secondary-400 dark:text-dark-text-muted">
-          {formatDate(createdAt)}
+          {formatTimeMoscow(createdAt)}
         </span>
       </div>
     </div>
