@@ -136,7 +136,7 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
     useCallback(async (): Promise<Conversation | null> => {
       try {
         const created = await api.post<ApiConversation>("/conversations", {
-          nom_conversation: "Resaka vaovao",
+          nom_conversation: "Nouvelle conversation",
         });
         const conversation: Conversation = {
           id: created.id,
@@ -150,7 +150,7 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
         return conversation;
       } catch (e) {
         showToast(
-          e instanceof Error ? e.message : "Misy fahadisoana tamin'ny namoronana ny resaka",
+          e instanceof Error ? e.message : "Erreur création conversation",
           "error",
         );
         return null;
@@ -191,7 +191,7 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
         );
       } catch (e) {
         showToast(
-          e instanceof Error ? e.message : "Misy fahadisoana ny fiandrasana ny resaka",
+          e instanceof Error ? e.message : "Erreur chargement conversation",
           "error",
         );
       }

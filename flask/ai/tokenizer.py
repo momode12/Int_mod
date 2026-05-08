@@ -1,36 +1,17 @@
 import re
 import unicodedata
-from collections import Counter
 
 
 class MalagasyTokenizer:
-    SPECIAL_TOKENS = {"<PAD>": 0, "<UNK>": 1, "<SOS>": 2, "<EOS>": 3, "<SEP>": 4}
+    SPECIAL_TOKENS    = {"<PAD>": 0, "<UNK>": 1, "<SOS>": 2, "<EOS>": 3, "<SEP>": 4}
     POSSESSIVE_SUFFIXES = [
         "-ko", "-nao", "-ny", "-ntsika", "-nareo", "-reo", "-dre", "-dreo"
     ]
-    # ── Synonymes malgaches médicaux (nouveauté v5) ──────────────
-    SYNONYMES = {
-        "aretin"  : ["aretina", "areti", "farary", "marary"],
-        "marary"  : ["manaintaina", "mangirifirifa", "manjinjiritra"],
-        "loha"    : ["lohako", "lohany"],
-        "kibo"    : ["kibony", "kiboko"],
-        "maso"    : ["masoko", "masony"],
-        "tratra"  : ["tratranko", "tratray"],
-        "tazo"    : ["tazona", "tazony"],
-        "fanafody": ["fanafarina", "tsaboina", "tsabo"],
-        "dokotera": ["mpitsabo"],
-        "rano"    : ["ranovola", "ranon"],
-        "sakafo"  : ["fihinana", "hanina"],
-        "tenda"   : ["tendako", "tenday"],
-        "tongotra": ["kitrokely", "lohalika"],
-        "tanana"  : ["tanako", "rantsana"],
-    }
 
     def __init__(self, vocab_size: int = 15000):
         self.vocab_size = vocab_size
         self.word2idx   = dict(self.SPECIAL_TOKENS)
         self.idx2word   = {v: k for k, v in self.SPECIAL_TOKENS.items()}
-        self.word_freq  = Counter()
 
     @staticmethod
     def _normalize_unicode(text: str) -> str:
@@ -42,49 +23,13 @@ class MalagasyTokenizer:
             return ""
         text = text.lower()
         text = self._normalize_unicode(text)
-        # Normaliser apostrophes
-        text = text.replace("\u2019", "'").replace("`", "'")
         for suf in self.POSSESSIVE_SUFFIXES:
-            text = re.sub(r"(?<=\w)" + re.escape(suf) + r"\b", "", text)
-        text = re.sub(r"[^\w\s'\-]", " ", text)
+            text = text.replace(suf, "")
+        text = re.sub(r"[^\w\s'\-:\/]", "", text)
         return re.sub(r"\s+", " ", text).strip()
 
     def tokenize(self, text) -> list:
-        cleaned = self.clean_text(text)
-        tokens  = []
-        for t in cleaned.split():
-            if len(t) > 1:
-                tokens.append(t)
-                # Décomposer mots composés avec tiret (aretin-doha → aretin + doha)
-                if "-" in t:
-                    parts = [p for p in t.split("-") if len(p) > 1]
-                    tokens.extend(parts)
-        return tokens
-
-    def expand_query(self, text: str) -> str:
-        """
-        Expansion de requête avec synonymes malgaches (nouveauté v5).
-        Améliore le recall du retriever BM25+TF-IDF.
-        Exemple : "marary lohako" → ajoute "manaintaina loha lohany"
-        """
-        tokens   = self.tokenize(text)
-        expanded = list(tokens)
-        for token in tokens:
-            for key, syns in self.SYNONYMES.items():
-                if token == key or token in syns:
-                    expanded.extend([s for s in [key] + syns if s != token])
-        return " ".join(expanded)
-
-    def build_vocab(self, texts: list):
-        counter = Counter()
-        for t in texts:
-            counter.update(self.tokenize(t))
-        self.word_freq = counter
-        for word, _ in counter.most_common(self.vocab_size - len(self.SPECIAL_TOKENS)):
-            if word not in self.word2idx:
-                idx               = len(self.word2idx)
-                self.word2idx[word] = idx
-                self.idx2word[idx]  = word
+        return [t for t in self.clean_text(text).split() if len(t) > 1]
 
     def encode(self, text, max_len=128, add_sos=True, add_eos=True) -> list:
         tokens = self.tokenize(text)
