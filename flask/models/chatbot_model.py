@@ -11,10 +11,7 @@ from config          import Config
 
 
 def load_chatbot(app):
-    """
-    Charge les 4 fichiers depuis model_files/ et stocke dans app.chatbot.
-    Meme principe que app.db pour MongoDB.
-    """
+
     model_dir = Config.MODEL_DIR
 
     torch.set_num_threads(Config.TORCH_THREADS)
