@@ -4,9 +4,10 @@ from pymongo import MongoClient
 from config import Config
 from models.user_models import create_user_collection
 from models.conversation_models import create_conversation_collections
-from models.chatbot_model import load_chatbot
+from models.chatbot_model import load_chatbot   # inchangé
 from routes import api_bp
 from flasgger import Swagger
+
 
 def create_app():
 
@@ -39,21 +40,23 @@ def create_app():
 
     # Connexion MongoDB
     client = MongoClient(Config.MONGO_URI)
-    db = client.get_default_database()
+    db     = client.get_default_database()
     app.db = db
 
-    # Collections crees automatiquement
+    # Collections créées automatiquement
     create_user_collection(db)
     create_conversation_collections(db)
 
-    # Chargement du modele IA 
+    # Chargement du modèle IA v5
     try:
         load_chatbot(app)
-    except FileNotFoundError:
-        print("model_files/ incomplet — placez les 4 fichiers Colab dans model_files/")
+    except FileNotFoundError as e:
+        print(f"[v5] model_files/ incomplet : {e}")
+        print("     → Placez model.pt, tokenizer.pkl, dataset.csv dans model_files/")
+        print("     → tfidf_vectorizer.pkl N'EST PLUS NÉCESSAIRE en v5")
         app.chatbot = None
     except Exception as e:
-        print(f"Erreur modele IA : {e}")
+        print(f"[v5] Erreur modèle IA : {e}")
         app.chatbot = None
 
     # Blueprint principal
@@ -61,9 +64,10 @@ def create_app():
 
     @app.route("/")
     def index():
-        return {"message": "ChatBot IA API — operationnelle"}
+        return {"message": "ChatBot Médical Malagasy v5 — API opérationnelle"}
 
     return app
+
 
 app = create_app()
 
