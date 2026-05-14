@@ -1,7 +1,9 @@
 from flask import Blueprint, request, jsonify, current_app
 from middlewares.auth_middleware import token_required
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+
+EAT = timezone(timedelta(hours=3))
 
 user_bp = Blueprint("user", __name__, url_prefix="/user")
 
@@ -18,32 +20,8 @@ def profile():
     responses:
       200:
         description: Profil utilisateur
-        schema:
-          type: object
-          properties:
-            id:
-              type: string
-              example: 664a1b2c3d4e5f6789abcdef
-            name:
-              type: string
-              example: Jean Rakoto
-            email:
-              type: string
-              example: jean@example.com
-            role:
-              type: string
-              example: user
-            created_at:
-              type: string
-              example: 2025-04-21T10:30:00
       401:
         description: Token invalide ou expiré
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              example: Token invalide ou expiré
     """
     user = request.user
     return jsonify({
@@ -77,14 +55,6 @@ def update_profile():
     responses:
       200:
         description: Profil mis à jour
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              example: Profil mis à jour
-            name:
-              type: string
       400:
         description: Nom requis
       401:
@@ -101,7 +71,7 @@ def update_profile():
             return jsonify({"message": "Nom ou email requis"}), 400
 
         db = current_app.db
-        updates = {"updated_at": datetime.utcnow()}
+        updates = {"updated_at": datetime.now(EAT)}
         if name:
             updates["name"] = name
 

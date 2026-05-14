@@ -7,7 +7,6 @@ from models.conversation_models import create_conversation_collections
 from routes import api_bp
 from flasgger import Swagger
 
-
 def create_app():
     app = Flask(__name__)
 
@@ -36,7 +35,6 @@ def create_app():
              "supports_credentials": True,
          }})
 
-    # ── MongoDB ───────────────────────────────────────────────────────
     client   = MongoClient(Config.MONGO_URI)
     db       = client.get_default_database()
     app.db   = db
@@ -44,12 +42,9 @@ def create_app():
     create_user_collection(db)
     create_conversation_collections(db)
 
-    # ── ML model warm-up (loads once, reused for every request) ───────
-    # Import here so the singleton is created inside the app context.
     from services.chat_services import ChatService
     ChatService.get()
 
-    # ── Blueprints ────────────────────────────────────────────────────
     app.register_blueprint(api_bp)
 
     @app.route("/")
@@ -57,7 +52,6 @@ def create_app():
         return {"message": "ChatBot Médical Malagasy API — opérationnelle"}
 
     return app
-
 
 app = create_app()
 

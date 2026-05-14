@@ -1,39 +1,27 @@
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
-
-# ---------------------------------------------------------------------------
-# Collection setup
-# ---------------------------------------------------------------------------
+EAT = timezone(timedelta(hours=3)) 
 
 def create_conversation_collections(db):
-    """
-    Create MongoDB collections and indexes for conversations and messages.
-    Safe to call every startup (create_collection is idempotent via the guard).
-    """
+
     existing = db.list_collection_names()
 
     if "conversations" not in existing:
         db.create_collection("conversations")
-        print("✅ Collection 'conversations' créée")
+        print("Collection 'conversations' crée")
 
     if "messages" not in existing:
         db.create_collection("messages")
-        print("✅ Collection 'messages' créée")
+        print("Collection 'messages' crée")
 
-    # Indexes
     db.conversations.create_index("user_id")
     db.conversations.create_index([("user_id", 1), ("updated_at", -1)])
     db.messages.create_index("conversation_id")
     db.messages.create_index([("conversation_id", 1), ("created_at", 1)])
-    print("✅ Index conversations/messages créés")
-
-
-# ---------------------------------------------------------------------------
-# Document schemas  (plain dicts — no ODM)
-# ---------------------------------------------------------------------------
-
+    print("Index conversations et messages crée")
+    
 def conversation_schema(user_id: str, nom_conversation: str = "Nouvelle conversation") -> dict:
-    now = datetime.utcnow()
+    now = datetime.now(EAT)
     return {
         "user_id":          user_id,
         "nom_conversation": nom_conversation,
@@ -45,12 +33,11 @@ def conversation_schema(user_id: str, nom_conversation: str = "Nouvelle conversa
 def message_schema(
     conversation_id: str,
     texte: str,
-    # --- NLP fields produced by chat_services.chat() ---
     categorie: str | None        = None,
     label_fr: str | None         = None,
     icon: str | None             = None,
     confidence: float | None     = None,
-    indicator: str | None        = None,   # "green" | "yellow" | "red"
+    indicator: str | None        = None,   
     tfidf_sim: float | None      = None,
     medicament1: str | None      = None,
     medicament2: str | None      = None,
@@ -64,7 +51,6 @@ def message_schema(
     return {
         "conversation_id": conversation_id,
         "texte":           texte,
-        # NLP output
         "categorie":       categorie,
         "label_fr":        label_fr,
         "icon":            icon,
@@ -79,5 +65,5 @@ def message_schema(
         "alerte":          alerte,
         "fallback":        fallback,
         "ood":             ood,
-        "created_at":      datetime.utcnow(),
+        "created_at":      datetime.now(EAT),
     }

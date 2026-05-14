@@ -1,17 +1,4 @@
-"""
-conversation_routes.py
-~~~~~~~~~~~~~~~~~~~~~~
-REST endpoints consumed by the React ChatProvider:
-
-  GET    /api/conversations                         → list
-  POST   /api/conversations                         → create
-  GET    /api/conversations/<id>                    → detail + messages
-  PUT    /api/conversations/<id>                    → rename
-  DELETE /api/conversations/<id>                    → delete
-  POST   /api/conversations/<id>/chat               → send message → NLP response
-"""
-
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 from bson import ObjectId
 from flask import Blueprint, current_app, jsonify, request
@@ -22,19 +9,15 @@ from services.chat_services import ChatService
 
 conversation_bp = Blueprint("conversation", __name__, url_prefix="/conversations")
 
-
-# ── helpers ──────────────────────────────────────────────────────────────────
+EAT = timezone(timedelta(hours=3))
 
 def _oid(raw: str):
-    """Convert string → ObjectId; raise ValueError on invalid input."""
     try:
         return ObjectId(raw)
     except Exception:
         raise ValueError(f"ID invalide: {raw}")
 
-
 def _fmt_conv(doc: dict) -> dict:
-    """Serialize a conversations document for the API response."""
     return {
         "id":               str(doc["_id"]),
         "nom_conversation": doc.get("nom_conversation", ""),
@@ -42,9 +25,7 @@ def _fmt_conv(doc: dict) -> dict:
         "updated_at":       doc.get("updated_at", doc["created_at"]).isoformat(),
     }
 
-
 def _fmt_msg(doc: dict) -> dict:
-    """Serialize a messages document for the API response."""
     return {
         "id":          str(doc["_id"]),
         "texte":       doc.get("texte"),
@@ -67,7 +48,6 @@ def _fmt_msg(doc: dict) -> dict:
 
 
 def _get_conv_or_404(db, conv_id: str, user_id: str):
-    """Return the conversation doc or raise a 404-style tuple."""
     try:
         oid = _oid(conv_id)
     except ValueError:
@@ -78,15 +58,21 @@ def _get_conv_or_404(db, conv_id: str, user_id: str):
         return None, (jsonify({"message": "Conversation introuvable"}), 404)
     return doc, None
 
-
-# ── routes ───────────────────────────────────────────────────────────────────
-
 @conversation_bp.route("", methods=["GET"])
 @token_required
 def list_conversations():
     """
-    GET /api/conversations
-    Return all conversations for the authenticated user, newest first.
+    Lister toutes les conversations de l'utilisateur connecté
+    ---
+    tags:
+      - Conversations
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Liste des conversations triées par date de mise à jour décroissante
+      401:
+        description: Token invalide ou expiré
     """
     db      = current_app.db
     user_id = str(request.user["_id"])
@@ -99,13 +85,30 @@ def list_conversations():
     )
     return jsonify([_fmt_conv(d) for d in docs]), 200
 
-
 @conversation_bp.route("", methods=["POST"])
 @token_required
 def create_conversation():
     """
-    POST /api/conversations
-    Body: { "nom_conversation": "..." }  (optional)
+    Créer une nouvelle conversation
+    ---
+    tags:
+      - Conversations
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        schema:
+          type: object
+          properties:
+            nom_conversation:
+              type: string
+              example: Nouvelle conversation
+    responses:
+      201:
+        description: Conversation crée
+      401:
+        description: Token invalide ou expiré
     """
     db      = current_app.db
     user_id = str(request.user["_id"])
@@ -118,13 +121,30 @@ def create_conversation():
 
     return jsonify(_fmt_conv(doc)), 201
 
-
 @conversation_bp.route("/<conv_id>", methods=["GET"])
 @token_required
 def get_conversation(conv_id: str):
     """
-    GET /api/conversations/<conv_id>
-    Returns conversation metadata + its messages array.
+    Récupérer une conversation avec tous ses messages
+    ---
+    tags:
+      - Conversations
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: conv_id
+        type: string
+        required: true
+        description: ID MongoDB de la conversation
+        example: 6a05a0b111ee3a898d2c6eab
+    responses:
+      200:
+        description: Conversation avec ses messages
+      401:
+        description: Token invalide ou expiré
+      404:
+        description: Conversation introuvable
     """
     db      = current_app.db
     user_id = str(request.user["_id"])
@@ -144,13 +164,43 @@ def get_conversation(conv_id: str):
     payload["messages"] = [_fmt_msg(m) for m in messages]
     return jsonify(payload), 200
 
-
 @conversation_bp.route("/<conv_id>", methods=["PUT"])
 @token_required
 def update_conversation(conv_id: str):
     """
-    PUT /api/conversations/<conv_id>
-    Body: { "nom_conversation": "..." }
+    Renommer une conversation
+    ---
+    tags:
+      - Conversations
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: conv_id
+        type: string
+        required: true
+        description: ID MongoDB de la conversation
+        example: 6a05a0b111ee3a898d2c6eab
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - nom_conversation
+          properties:
+            nom_conversation:
+              type: string
+              example: Marary ny lohako
+    responses:
+      200:
+        description: Conversation renommée
+      400:
+        description: nom_conversation requis
+      401:
+        description: Token invalide ou expiré
+      404:
+        description: Conversation introuvable
     """
     db      = current_app.db
     user_id = str(request.user["_id"])
@@ -164,7 +214,7 @@ def update_conversation(conv_id: str):
     if not nom:
         return jsonify({"message": "nom_conversation requis"}), 400
 
-    now = datetime.utcnow()
+    now = datetime.now(EAT)
     db.conversations.update_one(
         {"_id": conv["_id"]},
         {"$set": {"nom_conversation": nom, "updated_at": now}},
@@ -173,13 +223,30 @@ def update_conversation(conv_id: str):
     conv["updated_at"]       = now
     return jsonify(_fmt_conv(conv)), 200
 
-
 @conversation_bp.route("/<conv_id>", methods=["DELETE"])
 @token_required
 def delete_conversation(conv_id: str):
     """
-    DELETE /api/conversations/<conv_id>
-    Also removes all messages belonging to the conversation.
+    Supprimer une conversation et tous ses messages
+    ---
+    tags:
+      - Conversations
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: conv_id
+        type: string
+        required: true
+        description: ID MongoDB de la conversation
+        example: 6a05a0b111ee3a898d2c6eab
+    responses:
+      200:
+        description: Conversation supprimée avec succès
+      401:
+        description: Token invalide ou expiré
+      404:
+        description: Conversation introuvable
     """
     db      = current_app.db
     user_id = str(request.user["_id"])
@@ -192,19 +259,43 @@ def delete_conversation(conv_id: str):
     db.conversations.delete_one({"_id": conv["_id"]})
     return jsonify({"message": "Conversation supprimée"}), 200
 
-
 @conversation_bp.route("/<conv_id>/chat", methods=["POST"])
 @token_required
 def send_message(conv_id: str):
     """
-    POST /api/conversations/<conv_id>/chat
-    Body: { "texte": "marary ny lohako" }
-
-    Runs the NLP pipeline and persists the message + result.
-    Response shape matches ApiChatResponse expected by the React frontend:
-      { message_id, type, created_at, ...all NLP fields... }
-    or for salutations:
-      { type: "salutation", response: "..." }
+    Envoyer un message et obtenir une réponse du chatbot médical malagasy
+    ---
+    tags:
+      - Conversations
+    security:
+      - Bearer: []
+    parameters:
+      - in: path
+        name: conv_id
+        type: string
+        required: true
+        description: ID MongoDB de la conversation
+        example: 6a05a0b111ee3a898d2c6eab
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - texte
+          properties:
+            texte:
+              type: string
+              example: marary ny lohako
+    responses:
+      200:
+        description: Réponse du chatbot NLP.
+      400:
+        description: texte requis
+      401:
+        description: Token invalide ou expiré
+      404:
+        description: Conversation introuvable
     """
     db      = current_app.db
     user_id = str(request.user["_id"])
@@ -218,22 +309,18 @@ def send_message(conv_id: str):
     if not texte:
         return jsonify({"message": "texte requis"}), 400
 
-    # Retrieve last category for session context (last message in this conv)
     last_msg = db.messages.find_one(
         {"conversation_id": conv_id, "ood": {"$ne": True}},
         sort=[("created_at", -1)],
     )
     session_last_cat = last_msg.get("categorie") if last_msg else None
 
-    # ── Run NLP ──────────────────────────────────────────────────────
     svc    = ChatService.get()
     result = svc.chat(texte, session_last_cat=session_last_cat)
 
-    # Salutation — no persistence needed, return immediately
     if result.get("type") == "salutation":
         return jsonify({"type": "salutation", "response": result["response"]}), 200
 
-    # ── Persist message ───────────────────────────────────────────────
     msg_doc = message_schema(
         conversation_id = conv_id,
         texte           = texte,
@@ -256,18 +343,15 @@ def send_message(conv_id: str):
     message_id = str(ins.inserted_id)
     created_at = msg_doc["created_at"]
 
-    # Touch conversation updated_at
     db.conversations.update_one(
         {"_id": conv["_id"]},
         {"$set": {"updated_at": created_at}},
     )
 
-    # ── Response ─────────────────────────────────────────────────────
     return jsonify({
         "message_id":  message_id,
         "type":        result.get("type"),
         "created_at":  created_at.isoformat(),
-        # NLP fields
         "categorie":   result.get("categorie"),
         "label_fr":    result.get("label_fr"),
         "icon":        result.get("icon"),

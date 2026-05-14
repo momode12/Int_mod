@@ -26,44 +26,17 @@ def register():
               example: Jean Rakoto
             email:
               type: string
-              example: jean@example.com
+              example: jean@gmail.com
             password:
               type: string
               example: motdepasse123
     responses:
       201:
         description: Compte créé avec succès
-        schema:
-          type: object
-          properties:
-            token:
-              type: string
-              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-            user:
-              type: object
-              properties:
-                id:
-                  type: string
-                name:
-                  type: string
-                email:
-                  type: string
       400:
         description: Champs manquants ou mot de passe trop court
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              example: Tous les champs sont requis
       409:
         description: Email déjà utilisé
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              example: Email déjà utilisé
       500:
         description: Erreur serveur
     """
@@ -109,44 +82,17 @@ def login():
           properties:
             email:
               type: string
-              example: jean@example.com
+              example: jean@gmail.com
             password:
               type: string
               example: motdepasse123
     responses:
       200:
         description: Connexion réussie
-        schema:
-          type: object
-          properties:
-            token:
-              type: string
-              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-            user:
-              type: object
-              properties:
-                id:
-                  type: string
-                name:
-                  type: string
-                email:
-                  type: string
       400:
         description: Email et mot de passe requis
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              example: Email et mot de passe requis
       401:
         description: Email ou mot de passe incorrect
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              example: Email ou mot de passe incorrect
       500:
         description: Erreur serveur
     """

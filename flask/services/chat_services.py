@@ -1,22 +1,3 @@
-"""
-chat_services.py
-~~~~~~~~~~~~~~~~
-Loads the pickled ML artefacts produced by the Colab notebook and exposes
-a single `chat(user_input)` function that the conversation route calls.
-
-Expected artefact layout (set CHATBOT_MODEL_DIR in .env):
-    $CHATBOT_MODEL_DIR/
-        pipeline.pkl           – CalibratedClassifierCV(LinearSVC) pipeline
-        encoder.pkl            – LabelEncoder
-        retriever_tfidf.pkl    – TfidfVectorizer used by HybridRetriever
-        dataset_clean.csv      – cleaned dataset (needed to rebuild BM25)
-        config.json            – metadata / class list (informational)
-
-If the directory / files are absent the service starts in FALLBACK mode
-and every call returns an out-of-domain response so the rest of the app
-still works while models are being set up.
-"""
-
 from __future__ import annotations
 
 import math
@@ -30,9 +11,6 @@ from pathlib import Path
 
 import numpy as np
 
-# ---------------------------------------------------------------------------
-# Runtime imports — only pulled in when models are actually present
-# ---------------------------------------------------------------------------
 try:
     import pandas as pd
     from rank_bm25 import BM25Okapi
@@ -40,11 +18,6 @@ try:
     _DEPS_OK = True
 except ImportError:
     _DEPS_OK = False
-
-
-# ============================================================
-# Constants copied verbatim from the notebook
-# ============================================================
 
 NOMS_CAT = {
     'areti-maso': 'areti-maso',
@@ -138,9 +111,6 @@ CONF_MED = 0.35
 CONF_LOW = 0.18
 SIM_LOW  = 0.12
 
-# Small curated word sets used for language/gibberish detection
-# (abbreviated — the full sets are in the notebook; these cover the
-#  most common medical-context words and are sufficient for production)
 MOTS_MG_CORE = {
     'aho', 'izaho', 'ianao', 'izy', 'ny', 'misy', 'tsy', 'efa', 'mbola',
     'marary', 'manaintaina', 'mafana', 'tazo', 'kohaka', 'mandrevo',
@@ -167,10 +137,6 @@ MOTS_HORS_CORE = {
     'sekoly', 'oniversite', 'politika', 'fifidianana',
 }
 
-
-# ============================================================
-# Tokenizer  (copied from notebook)
-# ============================================================
 
 class MalagasyTokenizer:
     SYNONYMES = {
@@ -225,11 +191,6 @@ class MalagasyTokenizer:
     def for_tfidf(self, text: str) -> str:
         return self.clean(self.expand(text))
 
-
-# ============================================================
-# HybridRetriever  (copied from notebook)
-# ============================================================
-
 class HybridRetriever:
     def __init__(self, df, tok: MalagasyTokenizer, tfidf_vec):
         self.df   = df.reset_index(drop=True)
@@ -263,16 +224,10 @@ class HybridRetriever:
 
         return self.df.iloc[idx], float(score[idx])
 
-
-# ============================================================
-# Detection helpers  (copied from notebook)
-# ============================================================
-
 def _vowel_ratio(word: str) -> float:
     if not word:
         return 0.0
     return sum(1 for c in word if c in VOYELLES) / len(word)
-
 
 def _max_cons_run(word: str) -> int:
     run = mx = 0
@@ -284,14 +239,12 @@ def _max_cons_run(word: str) -> int:
             run  = 0
     return mx
 
-
 def _entropy(word: str) -> float:
     if not word:
         return 0.0
     c = Counter(word)
     l = len(word)
     return -sum((v / l) * math.log2(v / l) for v in c.values())
-
 
 def _is_gib_word(w: str) -> bool:
     w = w.lower()
@@ -309,14 +262,12 @@ def _is_gib_word(w: str) -> bool:
         return True
     return False
 
-
 def is_gibberish(text: str) -> bool:
     words = re.findall(r'[a-zA-Z]{4,}', text.lower())
     if not words:
         return False
     n_gib = sum(1 for w in words if _is_gib_word(w))
     return n_gib / len(words) > 0.50
-
 
 def detect_language(text: str) -> str | None:
     if re.search(r'[\u0400-\u04FF\u0600-\u06FF\u4E00-\u9FFF\u3040-\u30FF]', text):
@@ -337,7 +288,6 @@ def detect_language(text: str) -> str | None:
         return 'autre'
     return None
 
-
 def is_hors_domaine(text: str) -> bool:
     words = set(text.lower().split())
     if words & MOTS_HORS_CORE:
@@ -345,7 +295,6 @@ def is_hors_domaine(text: str) -> bool:
     if len(words) > 2 and not (words & MOTS_MG_CORE):
         return True
     return False
-
 
 def detect_salutation(text: str) -> str | None:
     t = text.lower().strip()
@@ -356,15 +305,9 @@ def detect_salutation(text: str) -> str | None:
             return SALUTATIONS[key]
     return None
 
-
 def check_grave(text: str) -> str | None:
     t = text.lower()
     return MSG_URGENCE if any(s in t for s in SYMPTOMES_GRAVES) else None
-
-
-# ============================================================
-# Response builder  (copied from notebook)
-# ============================================================
 
 def build_response(category: str, med1: str, med2: str, astuce: str) -> str:
     def ok(v):
@@ -388,11 +331,6 @@ def build_response(category: str, med1: str, med2: str, astuce: str) -> str:
     parties.append("Ka raha tena tsy mijanona ny aretina, mitsangana mandehana dokotera.")
     return ' '.join(parties)
 
-
-# ============================================================
-# Confidence → indicator helper
-# ============================================================
-
 def _indicator(conf: float) -> str:
     if conf >= CONF_MED:
         return "green"
@@ -400,15 +338,8 @@ def _indicator(conf: float) -> str:
         return "yellow"
     return "red"
 
-
-# ============================================================
-# ChatService — loads models once, used for every request
-# ============================================================
-
 class ChatService:
-    """
-    Singleton-like service.  Call `ChatService.get()` to obtain the instance.
-    """
+
     _instance: "ChatService | None" = None
 
     def __init__(self):
@@ -421,7 +352,7 @@ class ChatService:
 
         model_dir = os.getenv("CHATBOT_MODEL_DIR", "")
         if not model_dir:
-            print("⚠️  CHATBOT_MODEL_DIR non défini — mode fallback")
+            print("CHATBOT_MODEL_DIR non défini mode fallback")
             return
 
         path = Path(model_dir)
@@ -429,11 +360,11 @@ class ChatService:
                     "retriever_tfidf.pkl", "dataset_clean.csv"]
         missing = [f for f in required if not (path / f).exists()]
         if missing:
-            print(f"⚠️  Artefacts manquants {missing} — mode fallback")
+            print(f"Attention artefacts manquants {missing} — mode fallback")
             return
 
         if not _DEPS_OK:
-            print("⚠️  Dépendances ML manquantes (pandas/rank_bm25) — mode fallback")
+            print("Attention dépendances ML manquantes (pandas/rank_bm25) — mode fallback")
             return
 
         try:
@@ -454,14 +385,10 @@ class ChatService:
             self._retriever = HybridRetriever(df, self._tok, tfidf_vec)
             self._idx2cat   = {i: c for i, c in enumerate(self._le.classes_)}
             self._ready     = True
-            print(f"✅ ChatService prêt — {len(df)} docs, {len(self._le.classes_)} classes")
+            print(f"ChatService prêt — {len(df)} docs, {len(self._le.classes_)} classes")
 
         except Exception as exc:
-            print(f"❌ Erreur chargement modèle: {exc} — mode fallback")
-
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
+            print(f"Erreur chargement modèle: {exc} — mode fallback")
 
     @classmethod
     def get(cls) -> "ChatService":
@@ -470,64 +397,46 @@ class ChatService:
         return cls._instance
 
     def chat(self, user_input: str, session_last_cat: str | None = None) -> dict:
-        """
-        Run the full NLP pipeline and return a result dict compatible with
-        the message_schema fields.
 
-        Returns a dict with keys:
-            type, generated, categorie, label_fr, icon, confidence,
-            indicator, tfidf_sim, medicament1, medicament2, astuce,
-            top3, alerte, fallback, ood
-        """
         ui = (user_input or "").strip()
 
-        # ── 1. Empty / too short ─────────────────────────────────────
         if not ui:
             return self._special("empty", "Mba soraty zavatra...")
         if len(ui) < 5:
             return self._special("too_short", "Mba omeo fanazavana fanampiny.")
 
-        # ── 2. Salutation ────────────────────────────────────────────
         sal = detect_salutation(ui)
         if sal:
             return {"type": "salutation", "response": sal}
 
-        # ── 3. Gibberish ─────────────────────────────────────────────
         if is_gibberish(ui):
             return self._special("gibberish", random.choice(MSGS_GIB), ood=True)
 
-        # ── 4. Foreign language ──────────────────────────────────────
         lang = detect_language(ui)
         if lang:
             return self._special("langue", MSG_LANGUE, ood=True)
 
-        # ── 5. Off-domain ────────────────────────────────────────────
         if is_hors_domaine(ui):
             return self._special("hors_domaine", random.choice(MSGS_HORS), ood=True)
 
-        # ── 6. Urgent symptoms ───────────────────────────────────────
         alerte = check_grave(ui)
 
-        # ── 7 & 8. Fallback when models not loaded ───────────────────
         if not self._ready:
             fb = (alerte + "\n\n" if alerte else "") + random.choice(MSGS_HORS)
             return self._special("fallback", fb, alerte=alerte, ood=True)
 
-        # ── 9. SVM classification ────────────────────────────────────
         proc  = self._tok.for_tfidf(ui)
         probs = self._pipeline.predict_proba([proc])[0]
         idx   = int(probs.argmax())
         cat   = self._idx2cat[idx]
         conf  = float(probs[idx])
 
-        # Context fallback from previous turn
         if (conf < CONF_MED
                 and session_last_cat
                 and session_last_cat not in ("gibberish", "hors_domaine", "langue")):
             cat  = session_last_cat
             conf = max(conf, CONF_MED)
 
-        # Top-3
         top_idx = probs.argsort()[-3:][::-1]
         top3    = [
             {"categorie": self._idx2cat[i],
@@ -536,7 +445,6 @@ class ChatService:
             for i in top_idx
         ]
 
-        # ── 10. BM25 + TF-IDF retrieval ──────────────────────────────
         row, sim = self._retriever.get(ui, category=cat)
 
         if conf < CONF_LOW and sim < SIM_LOW and not alerte:
@@ -571,10 +479,6 @@ class ChatService:
             "fallback":    None,
             "ood":         False,
         }
-
-    # ------------------------------------------------------------------
-    # Private helpers
-    # ------------------------------------------------------------------
 
     @staticmethod
     def _special(
