@@ -1,0 +1,27 @@
+{
+  "version": "v7_fixed",
+  "fixes": [
+    "gibberish_threshold_lowered",
+    "foreign_lang_always_malagasy",
+    "unique_clean_response_format"
+  ],
+  "classes": [
+    "areti-maso",
+    "aretim-po",
+    "aretin-doha",
+    "aretin-kibo",
+    "aretin-pivalanana",
+    "aretin-tanana",
+    "aretin-tenda",
+    "aretin-tongotra",
+    "aretin-tratra",
+    "aretin-tsaina",
+    "aretin-urinaire",
+    "diabeta",
+    "fiakaran-ny-tosi-dra",
+    "kohaka",
+    "tazo",
+    "tazomoka"
+  ],
+  "no_external_api": true
+}

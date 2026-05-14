@@ -25,6 +25,7 @@ type ApiMessage = {
   icon?: string | null;
   confidence?: number | null;
   indicator?: "green" | "yellow" | "red" | null;
+  tfidf_sim?: number | null;
   medicament1?: string | null;
   medicament2?: string | null;
   astuce?: string | null;
@@ -32,6 +33,7 @@ type ApiMessage = {
   top3?: Array<{ categorie: string; icon?: string; score: number }> | null;
   alerte?: string | null;
   fallback?: string | null;
+  ood?: boolean | null;
   created_at: string;
 };
 
@@ -55,8 +57,16 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [isTyping, setIsTyping] = useState(false);
 
   const buildBotContent = useCallback((m: ApiMessage) => {
-    const parts: string[] = [];
+    const generated = (m.generated ?? "").trim();
+    if (generated) {
+      const parts: string[] = [];
+      if (m.alerte && !generated.includes(m.alerte)) parts.push(m.alerte);
+      parts.push(generated);
+      if (m.fallback && !generated.includes(m.fallback)) parts.push(m.fallback);
+      return parts.filter(Boolean).join("\n\n");
+    }
 
+    const parts: string[] = [];
     const icon = m.icon ?? "";
     const label = m.label_fr ?? m.categorie ?? "Réponse";
     const confidence =
@@ -69,13 +79,10 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
       .join(" ");
     if (header) parts.push(header);
 
-    if (m.generated) parts.push(m.generated);
-    if (m.fallback) parts.push(m.fallback);
-
     const meds = [m.medicament1, m.medicament2].filter(Boolean);
     if (meds.length) parts.push(meds.join(" / "));
-
     if (m.astuce) parts.push(m.astuce);
+    if (m.fallback) parts.push(m.fallback);
 
     return parts.filter(Boolean).join("\n");
   }, []);
@@ -293,6 +300,7 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
           icon: res.icon,
           confidence: res.confidence,
           indicator: res.indicator,
+          tfidf_sim: res.tfidf_sim,
           medicament1: res.medicament1,
           medicament2: res.medicament2,
           astuce: res.astuce,
@@ -300,6 +308,7 @@ const ChatProvider = ({ children }: { children: ReactNode }) => {
           top3: res.top3,
           alerte: res.alerte,
           fallback: res.fallback,
+          ood: res.ood,
           created_at: res.created_at,
         };
 

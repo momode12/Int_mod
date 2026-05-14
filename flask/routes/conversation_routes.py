@@ -1,639 +1,285 @@
-from flask import Blueprint, request, jsonify, current_app
-from middlewares.auth_middleware   import token_required
-from services.conversation_service import (
-    create_conversation,
-    get_conversations,
-    get_conversation_by_id,
-    rename_conversation,
-    delete_conversation,
-    send_message,
-    get_messages,
-)
-from services.chatbot_service import get_all_categories
+"""
+conversation_routes.py
+~~~~~~~~~~~~~~~~~~~~~~
+REST endpoints consumed by the React ChatProvider:
+
+  GET    /api/conversations                         → list
+  POST   /api/conversations                         → create
+  GET    /api/conversations/<id>                    → detail + messages
+  PUT    /api/conversations/<id>                    → rename
+  DELETE /api/conversations/<id>                    → delete
+  POST   /api/conversations/<id>/chat               → send message → NLP response
+"""
+
+from datetime import datetime
+
+from bson import ObjectId
+from flask import Blueprint, current_app, jsonify, request
+
+from middlewares.auth_middleware import token_required
+from models.conversation_models import conversation_schema, message_schema
+from services.chat_services import ChatService
 
 conversation_bp = Blueprint("conversation", __name__, url_prefix="/conversations")
 
-@conversation_bp.route("", methods=["POST"])
-@token_required
-def create():
-    """
-    Créer une nouvelle conversation
-    ---
-    tags:
-      - Conversations
-    security:
-      - Bearer: []
-    parameters:
-      - in: body
-        name: body
-        required: true
-        schema:
-          type: object
-          required:
-            - nom_conversation
-          properties:
-            nom_conversation:
-              type: string
-              example: Consultation du 22 avril
-    responses:
-      201:
-        description: Conversation créée avec succès
-        schema:
-          type: object
-          properties:
-            id:
-              type: string
-              example: 664a1b2c3d4e5f6789abcdef
-            nom_conversation:
-              type: string
-              example: Consultation du 22 avril
-            created_at:
-              type: string
-              example: 2025-04-22T10:30:00
-      400:
-        description: nom_conversation requis
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              example: nom_conversation requis
-      401:
-        description: Token invalide ou expiré
-      500:
-        description: Erreur serveur
-    """
+
+# ── helpers ──────────────────────────────────────────────────────────────────
+
+def _oid(raw: str):
+    """Convert string → ObjectId; raise ValueError on invalid input."""
     try:
-        data             = request.get_json()
-        nom_conversation = data.get("nom_conversation", "").strip()
+        return ObjectId(raw)
+    except Exception:
+        raise ValueError(f"ID invalide: {raw}")
 
-        if not nom_conversation:
-            return jsonify({"message": "nom_conversation requis"}), 400
 
-        db      = current_app.db
-        user_id = str(request.user["_id"])
-        result  = create_conversation(db, user_id, nom_conversation)
+def _fmt_conv(doc: dict) -> dict:
+    """Serialize a conversations document for the API response."""
+    return {
+        "id":               str(doc["_id"]),
+        "nom_conversation": doc.get("nom_conversation", ""),
+        "created_at":       doc["created_at"].isoformat(),
+        "updated_at":       doc.get("updated_at", doc["created_at"]).isoformat(),
+    }
 
-        return jsonify(result), 201
 
-    except Exception as e:
-        return jsonify({"message": str(e)}), 500
+def _fmt_msg(doc: dict) -> dict:
+    """Serialize a messages document for the API response."""
+    return {
+        "id":          str(doc["_id"]),
+        "texte":       doc.get("texte"),
+        "categorie":   doc.get("categorie"),
+        "label_fr":    doc.get("label_fr"),
+        "icon":        doc.get("icon"),
+        "confidence":  doc.get("confidence"),
+        "indicator":   doc.get("indicator"),
+        "tfidf_sim":   doc.get("tfidf_sim"),
+        "medicament1": doc.get("medicament1"),
+        "medicament2": doc.get("medicament2"),
+        "astuce":      doc.get("astuce"),
+        "generated":   doc.get("generated"),
+        "top3":        doc.get("top3", []),
+        "alerte":      doc.get("alerte"),
+        "fallback":    doc.get("fallback"),
+        "ood":         doc.get("ood"),
+        "created_at":  doc["created_at"].isoformat(),
+    }
+
+
+def _get_conv_or_404(db, conv_id: str, user_id: str):
+    """Return the conversation doc or raise a 404-style tuple."""
+    try:
+        oid = _oid(conv_id)
+    except ValueError:
+        return None, (jsonify({"message": "ID invalide"}), 400)
+
+    doc = db.conversations.find_one({"_id": oid, "user_id": user_id})
+    if not doc:
+        return None, (jsonify({"message": "Conversation introuvable"}), 404)
+    return doc, None
+
+
+# ── routes ───────────────────────────────────────────────────────────────────
 
 @conversation_bp.route("", methods=["GET"])
 @token_required
-def get_all():
+def list_conversations():
     """
-    Récupérer toutes mes conversations
-    ---
-    tags:
-      - Conversations
-    security:
-      - Bearer: []
-    responses:
-      200:
-        description: Liste des conversations de l'utilisateur connecté
-        schema:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-                example: 664a1b2c3d4e5f6789abcdef
-              nom_conversation:
-                type: string
-                example: Consultation du 22 avril
-              created_at:
-                type: string
-                example: 2025-04-22T10:30:00
-              updated_at:
-                type: string
-                example: 2025-04-22T11:00:00
-      401:
-        description: Token invalide ou expiré
-      500:
-        description: Erreur serveur
+    GET /api/conversations
+    Return all conversations for the authenticated user, newest first.
     """
-    try:
-        db      = current_app.db
-        user_id = str(request.user["_id"])
-        result  = get_conversations(db, user_id)
+    db      = current_app.db
+    user_id = str(request.user["_id"])
 
-        return jsonify(result), 200
+    docs = list(
+        db.conversations.find(
+            {"user_id": user_id},
+            sort=[("updated_at", -1)],
+        )
+    )
+    return jsonify([_fmt_conv(d) for d in docs]), 200
 
-    except Exception as e:
-        return jsonify({"message": str(e)}), 500
 
-
-# ══════════════════════════════════════════
-# GET /api/conversations/:id
-# ══════════════════════════════════════════
-@conversation_bp.route("/<conversation_id>", methods=["GET"])
+@conversation_bp.route("", methods=["POST"])
 @token_required
-def get_one(conversation_id):
+def create_conversation():
     """
-    Récupérer une conversation avec tous ses messages
-    ---
-    tags:
-      - Conversations
-    security:
-      - Bearer: []
-    parameters:
-      - in: path
-        name: conversation_id
-        type: string
-        required: true
-        description: ID de la conversation
-        example: 664a1b2c3d4e5f6789abcdef
-    responses:
-      200:
-        description: Conversation avec historique des messages
-        schema:
-          type: object
-          properties:
-            id:
-              type: string
-            nom_conversation:
-              type: string
-            created_at:
-              type: string
-            updated_at:
-              type: string
-            messages:
-              type: array
-              items:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  texte:
-                    type: string
-                  categorie:
-                    type: string
-                  confidence:
-                    type: number
-                  medicament1:
-                    type: string
-                  medicament2:
-                    type: string
-                  astuce:
-                    type: string
-                  created_at:
-                    type: string
-      401:
-        description: Token invalide ou expiré
-      404:
-        description: Conversation introuvable
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              example: Conversation introuvable
-      500:
-        description: Erreur serveur
+    POST /api/conversations
+    Body: { "nom_conversation": "..." }  (optional)
     """
-    try:
-        db      = current_app.db
-        user_id = str(request.user["_id"])
-        result  = get_conversation_by_id(db, conversation_id, user_id)
+    db      = current_app.db
+    user_id = str(request.user["_id"])
+    data    = request.get_json(silent=True) or {}
 
-        return jsonify(result), 200
+    nom  = (data.get("nom_conversation") or "Nouvelle conversation").strip()
+    doc  = conversation_schema(user_id, nom)
+    res  = db.conversations.insert_one(doc)
+    doc["_id"] = res.inserted_id
 
-    except ValueError as e:
-        return jsonify({"message": str(e)}), 404
-    except Exception as e:
-        return jsonify({"message": str(e)}), 500
+    return jsonify(_fmt_conv(doc)), 201
 
-@conversation_bp.route("/<conversation_id>", methods=["PUT"])
+
+@conversation_bp.route("/<conv_id>", methods=["GET"])
 @token_required
-def rename(conversation_id):
+def get_conversation(conv_id: str):
     """
-    Renommer une conversation
-    ---
-    tags:
-      - Conversations
-    security:
-      - Bearer: []
-    parameters:
-      - in: path
-        name: conversation_id
-        type: string
-        required: true
-        description: ID de la conversation
-        example: 664a1b2c3d4e5f6789abcdef
-      - in: body
-        name: body
-        required: true
-        schema:
-          type: object
-          required:
-            - nom_conversation
-          properties:
-            nom_conversation:
-              type: string
-              example: Consultation suivi semaine 2
-    responses:
-      200:
-        description: Conversation renommée
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              example: Conversation renommee
-            nom_conversation:
-              type: string
-              example: Consultation suivi semaine 2
-      400:
-        description: nom_conversation requis
-      401:
-        description: Token invalide ou expiré
-      404:
-        description: Conversation introuvable
-      500:
-        description: Erreur serveur
+    GET /api/conversations/<conv_id>
+    Returns conversation metadata + its messages array.
     """
-    try:
-        data = request.get_json()
-        nom  = data.get("nom_conversation", "").strip()
+    db      = current_app.db
+    user_id = str(request.user["_id"])
 
-        if not nom:
-            return jsonify({"message": "nom_conversation requis"}), 400
+    conv, err = _get_conv_or_404(db, conv_id, user_id)
+    if err:
+        return err
 
-        db      = current_app.db
-        user_id = str(request.user["_id"])
-        result  = rename_conversation(db, conversation_id, user_id, nom)
+    messages = list(
+        db.messages.find(
+            {"conversation_id": conv_id},
+            sort=[("created_at", 1)],
+        )
+    )
 
-        return jsonify(result), 200
-
-    except ValueError as e:
-        return jsonify({"message": str(e)}), 404
-    except Exception as e:
-        return jsonify({"message": str(e)}), 500
+    payload = _fmt_conv(conv)
+    payload["messages"] = [_fmt_msg(m) for m in messages]
+    return jsonify(payload), 200
 
 
-# ══════════════════════════════════════════
-# DELETE /api/conversations/:id
-# ══════════════════════════════════════════
-@conversation_bp.route("/<conversation_id>", methods=["DELETE"])
+@conversation_bp.route("/<conv_id>", methods=["PUT"])
 @token_required
-def delete(conversation_id):
+def update_conversation(conv_id: str):
     """
-    Supprimer une conversation et tous ses messages
-    ---
-    tags:
-      - Conversations
-    security:
-      - Bearer: []
-    parameters:
-      - in: path
-        name: conversation_id
-        type: string
-        required: true
-        description: ID de la conversation à supprimer
-        example: 664a1b2c3d4e5f6789abcdef
-    responses:
-      200:
-        description: Conversation supprimée
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              example: Conversation supprimee
-      401:
-        description: Token invalide ou expiré
-      404:
-        description: Conversation introuvable
-      500:
-        description: Erreur serveur
+    PUT /api/conversations/<conv_id>
+    Body: { "nom_conversation": "..." }
     """
-    try:
-        db      = current_app.db
-        user_id = str(request.user["_id"])
-        result  = delete_conversation(db, conversation_id, user_id)
+    db      = current_app.db
+    user_id = str(request.user["_id"])
 
-        return jsonify(result), 200
+    conv, err = _get_conv_or_404(db, conv_id, user_id)
+    if err:
+        return err
 
-    except ValueError as e:
-        return jsonify({"message": str(e)}), 404
-    except Exception as e:
-        return jsonify({"message": str(e)}), 500
+    data = request.get_json(silent=True) or {}
+    nom  = (data.get("nom_conversation") or "").strip()
+    if not nom:
+        return jsonify({"message": "nom_conversation requis"}), 400
 
-@conversation_bp.route("/<conversation_id>/chat", methods=["POST"])
+    now = datetime.utcnow()
+    db.conversations.update_one(
+        {"_id": conv["_id"]},
+        {"$set": {"nom_conversation": nom, "updated_at": now}},
+    )
+    conv["nom_conversation"] = nom
+    conv["updated_at"]       = now
+    return jsonify(_fmt_conv(conv)), 200
+
+
+@conversation_bp.route("/<conv_id>", methods=["DELETE"])
 @token_required
-def chat(conversation_id):
+def delete_conversation(conv_id: str):
     """
-    Envoyer un message — l'IA répond et tout est sauvegardé en base
-    ---
-    tags:
-      - Chatbot IA
-    security:
-      - Bearer: []
-    parameters:
-      - in: path
-        name: conversation_id
-        type: string
-        required: true
-        description: ID de la conversation
-        example: 664a1b2c3d4e5f6789abcdef
-      - in: body
-        name: body
-        required: true
-        schema:
-          type: object
-          required:
-            - texte
-          properties:
-            texte:
-              type: string
-              example: Marary ny lohako indrindra rehefa maraina vao mifoha
-    responses:
-      200:
-        description: Réponse de l'IA sauvegardée en base MongoDB
-        schema:
-          type: object
-          properties:
-            message_id:
-              type: string
-              example: 664a1b2c3d4e5f6789abcdef
-            texte:
-              type: string
-              example: Marary ny lohako indrindra rehefa maraina vao mifoha
-            categorie:
-              type: string
-              example: aretin-doha
-            icon:
-              type: string
-              example: "\U0001f9e0"
-            confidence:
-              type: number
-              example: 90.2
-            indicator:
-              type: string
-              enum:
-                - green
-                - yellow
-                - red
-              example: green
-            medicament1:
-              type: string
-              example: "Paracétamol 500 mg : 3x/andro"
-            medicament2:
-              type: string
-              example: "Ibuprofène 400 mg : 2x/andro"
-            astuce:
-              type: string
-              example: "Misotroa rano betsaka ary matory ampy 7-8 ora"
-            generated:
-              type: string
-              example: "paracetamol 500 mg maraina midi hariva"
-            top3:
-              type: array
-              items:
-                type: object
-                properties:
-                  categorie:
-                    type: string
-                  icon:
-                    type: string
-                  score:
-                    type: number
-            alerte:
-              type: string
-              nullable: true
-              description: Message d'alerte si symptôme grave détecté
-              example: null
-            fallback:
-              type: string
-              nullable: true
-              description: Conseil générique si confiance < 40%
-              example: null
-            created_at:
-              type: string
-              example: 2025-04-22T10:30:00
-      400:
-        description: Texte manquant, trop court ou trop long
-        schema:
-          type: object
-          properties:
-            message:
-              type: string
-              example: Champ texte requis
-      401:
-        description: Token invalide ou expiré
-      404:
-        description: Conversation introuvable
-      500:
-        description: Erreur serveur
+    DELETE /api/conversations/<conv_id>
+    Also removes all messages belonging to the conversation.
     """
-    try:
-        if current_app.chatbot is None:
-            return jsonify({"message": "Modele IA non charge"}), 503
+    db      = current_app.db
+    user_id = str(request.user["_id"])
 
-        data  = request.get_json()
-        texte = data.get("texte", "").strip()
+    conv, err = _get_conv_or_404(db, conv_id, user_id)
+    if err:
+        return err
 
-        if not texte:
-            return jsonify({"message": "Champ texte requis"}), 400
-
-        if len(texte) < 3:
-            return jsonify({"message": "Texte trop court (min 3 caractères)"}), 400
-
-        if len(texte) > 500:
-            return jsonify({"message": "Texte trop long (max 500 caractères)"}), 400
-
-        db      = current_app.db
-        user_id = str(request.user["_id"])
-        result  = send_message(db, conversation_id, user_id, texte)
-
-        return jsonify(result), 200
-
-    except ValueError as e:
-        return jsonify({"message": str(e)}), 404
-    except Exception as e:
-        return jsonify({"message": str(e)}), 500
+    db.messages.delete_many({"conversation_id": conv_id})
+    db.conversations.delete_one({"_id": conv["_id"]})
+    return jsonify({"message": "Conversation supprimée"}), 200
 
 
-# ══════════════════════════════════════════
-# GET /api/conversations/:id/messages
-# ══════════════════════════════════════════
-@conversation_bp.route("/<conversation_id>/messages", methods=["GET"])
+@conversation_bp.route("/<conv_id>/chat", methods=["POST"])
 @token_required
-def messages(conversation_id):
+def send_message(conv_id: str):
     """
-    Récupérer l'historique des messages d'une conversation
-    ---
-    tags:
-      - Chatbot IA
-    security:
-      - Bearer: []
-    parameters:
-      - in: path
-        name: conversation_id
-        type: string
-        required: true
-        description: ID de la conversation
-        example: 664a1b2c3d4e5f6789abcdef
-    responses:
-      200:
-        description: Historique complet des messages
-        schema:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-              texte:
-                type: string
-              categorie:
-                type: string
-              confidence:
-                type: number
-              indicator:
-                type: string
-                enum:
-                  - green
-                  - yellow
-                  - red
-              medicament1:
-                type: string
-              medicament2:
-                type: string
-              astuce:
-                type: string
-              generated:
-                type: string
-              top3:
-                type: array
-                items:
-                  type: object
-              alerte:
-                type: string
-                nullable: true
-              fallback:
-                type: string
-                nullable: true
-              created_at:
-                type: string
-      401:
-        description: Token invalide ou expiré
-      404:
-        description: Conversation introuvable
-      500:
-        description: Erreur serveur
+    POST /api/conversations/<conv_id>/chat
+    Body: { "texte": "marary ny lohako" }
+
+    Runs the NLP pipeline and persists the message + result.
+    Response shape matches ApiChatResponse expected by the React frontend:
+      { message_id, type, created_at, ...all NLP fields... }
+    or for salutations:
+      { type: "salutation", response: "..." }
     """
-    try:
-        db      = current_app.db
-        user_id = str(request.user["_id"])
-        result  = get_messages(db, conversation_id, user_id)
+    db      = current_app.db
+    user_id = str(request.user["_id"])
 
-        return jsonify(result), 200
+    conv, err = _get_conv_or_404(db, conv_id, user_id)
+    if err:
+        return err
 
-    except ValueError as e:
-        return jsonify({"message": str(e)}), 404
-    except Exception as e:
-        return jsonify({"message": str(e)}), 500
+    data  = request.get_json(silent=True) or {}
+    texte = (data.get("texte") or "").strip()
+    if not texte:
+        return jsonify({"message": "texte requis"}), 400
 
-@conversation_bp.route("/categories", methods=["GET"])
-@token_required
-def categories():
-    """
-    Récupérer la liste des 28 catégories médicales disponibles
-    ---
-    tags:
-      - Chatbot IA
-    security:
-      - Bearer: []
-    responses:
-      200:
-        description: Liste des catégories médicales
-        schema:
-          type: object
-          properties:
-            total:
-              type: integer
-              example: 28
-            categories:
-              type: array
-              items:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    example: aretin-doha
-                  label_fr:
-                    type: string
-                    example: Maux de tete
-                  icon:
-                    type: string
-                    example: "\U0001f9e0"
-      401:
-        description: Token invalide ou expiré
-      503:
-        description: Modèle IA non chargé
-    """
-    try:
-        if current_app.chatbot is None:
-            return jsonify({"message": "Modele IA non charge"}), 503
+    # Retrieve last category for session context (last message in this conv)
+    last_msg = db.messages.find_one(
+        {"conversation_id": conv_id, "ood": {"$ne": True}},
+        sort=[("created_at", -1)],
+    )
+    session_last_cat = last_msg.get("categorie") if last_msg else None
 
-        cats = get_all_categories()
-        return jsonify({"total": len(cats), "categories": cats}), 200
+    # ── Run NLP ──────────────────────────────────────────────────────
+    svc    = ChatService.get()
+    result = svc.chat(texte, session_last_cat=session_last_cat)
 
-    except Exception as e:
-        return jsonify({"message": str(e)}), 500
+    # Salutation — no persistence needed, return immediately
+    if result.get("type") == "salutation":
+        return jsonify({"type": "salutation", "response": result["response"]}), 200
 
-@conversation_bp.route("/health", methods=["GET"])
-def health():
-    """
-    Vérifier l'état du modèle IA
-    ---
-    tags:
-      - Chatbot IA
-    responses:
-      200:
-        description: Modèle IA opérationnel
-        schema:
-          type: object
-          properties:
-            status:
-              type: string
-              example: ok
-            model:
-              type: object
-              properties:
-                classes:
-                  type: integer
-                  example: 28
-                device:
-                  type: string
-                  example: cpu
-      503:
-        description: Modèle IA non chargé
-        schema:
-          type: object
-          properties:
-            status:
-              type: string
-              example: error
-            message:
-              type: string
-              example: Modele non charge
-    """
-    try:
-        if current_app.chatbot is None:
-            return jsonify({"status": "error", "message": "Modele non charge"}), 503
+    # ── Persist message ───────────────────────────────────────────────
+    msg_doc = message_schema(
+        conversation_id = conv_id,
+        texte           = texte,
+        categorie       = result.get("categorie"),
+        label_fr        = result.get("label_fr"),
+        icon            = result.get("icon"),
+        confidence      = result.get("confidence"),
+        indicator       = result.get("indicator"),
+        tfidf_sim       = result.get("tfidf_sim"),
+        medicament1     = result.get("medicament1"),
+        medicament2     = result.get("medicament2"),
+        astuce          = result.get("astuce"),
+        generated       = result.get("generated"),
+        top3            = result.get("top3"),
+        alerte          = result.get("alerte"),
+        fallback        = result.get("fallback"),
+        ood             = result.get("ood", False),
+    )
+    ins        = db.messages.insert_one(msg_doc)
+    message_id = str(ins.inserted_id)
+    created_at = msg_doc["created_at"]
 
-        chatbot = current_app.chatbot
-        return jsonify({
-            "status": "ok",
-            "model" : {
-                "classes": len(chatbot["idx2category"]),
-                "device" : "cpu",
-            }
-        }), 200
+    # Touch conversation updated_at
+    db.conversations.update_one(
+        {"_id": conv["_id"]},
+        {"$set": {"updated_at": created_at}},
+    )
 
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 503
+    # ── Response ─────────────────────────────────────────────────────
+    return jsonify({
+        "message_id":  message_id,
+        "type":        result.get("type"),
+        "created_at":  created_at.isoformat(),
+        # NLP fields
+        "categorie":   result.get("categorie"),
+        "label_fr":    result.get("label_fr"),
+        "icon":        result.get("icon"),
+        "confidence":  result.get("confidence"),
+        "indicator":   result.get("indicator"),
+        "tfidf_sim":   result.get("tfidf_sim"),
+        "medicament1": result.get("medicament1"),
+        "medicament2": result.get("medicament2"),
+        "astuce":      result.get("astuce"),
+        "generated":   result.get("generated"),
+        "top3":        result.get("top3", []),
+        "alerte":      result.get("alerte"),
+        "fallback":    result.get("fallback"),
+        "ood":         result.get("ood", False),
+    }), 200
