@@ -1,14 +1,24 @@
-
+import { BrowserRouter as Router } from "react-router-dom";
+import  AuthProvider  from "./providers/AuthProvider";
+import  ChatProvider  from "./providers/ChatProvider";
+import  ThemeProvider  from "./providers/ThemeProvider";
+import  ToastProvider  from "./providers/ToastProvider";
+import AppRoutes from "./routes/AppRoutes"; // ← toute la logique routes ici
 
 function App() {
-
   return (
-     <div className="min-h-screen bg-chat-bg flex items-center justify-center">
-      <h1 className="text-3xl font-bold text-chat-primary">
-        Tailwind v4 est opérationnel ✅
-      </h1>
-    </div>
-  )
+    <ThemeProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <ChatProvider>
+            <Router>
+              <AppRoutes />
+            </Router>
+          </ChatProvider>
+        </AuthProvider>
+      </ToastProvider>
+    </ThemeProvider>
+  );
 }
 
-export default App
+export default App;

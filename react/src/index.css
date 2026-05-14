@@ -1,2 +1,95 @@
 @import "tailwindcss";
 
+@theme {
+  /* ==============================
+     COULEURS PRIMAIRES
+  ============================== */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+
+  /* ==============================
+     COULEURS SECONDAIRES
+  ============================== */
+  --color-secondary-50: #f8fafc;
+  --color-secondary-100: #f1f5f9;
+  --color-secondary-200: #e2e8f0;
+  --color-secondary-300: #cbd5e1;
+  --color-secondary-400: #94a3b8;
+  --color-secondary-500: #64748b;
+  --color-secondary-600: #475569;
+  --color-secondary-700: #334155;
+  --color-secondary-800: #1e293b;
+  --color-secondary-900: #0f172a;
+
+  /* ==============================
+     SUCCÈS / ERREUR / WARNING / INFO
+  ============================== */
+  --color-success-light: #86efac;
+  --color-success: #22c55e;
+  --color-success-dark: #15803d;
+
+  --color-error-light: #fca5a5;
+  --color-error: #ef4444;
+  --color-error-dark: #b91c1c;
+
+  --color-warning-light: #fde68a;
+  --color-warning: #f59e0b;
+  --color-warning-dark: #b45309;
+
+  --color-info-light: #93c5fd;
+  --color-info: #3b82f6;
+  --color-info-dark: #1d4ed8;
+
+  /* ==============================
+     CHAT
+  ============================== */
+  --color-chat-user-bubble: #3b82f6;
+  --color-chat-user-text: #ffffff;
+  --color-chat-bot-bubble: #f1f5f9;
+  --color-chat-bot-text: #1e293b;
+  --color-chat-background: #f8fafc;
+  --color-chat-input-bg: #ffffff;
+  --color-chat-input-border: #e2e8f0;
+
+  /* ==============================
+     AUTH
+  ============================== */
+  --color-auth-background: #f1f5f9;
+  --color-auth-card-bg: #ffffff;
+  --color-auth-card-border: #e2e8f0;
+
+  /* ==============================
+     SIDEBAR
+  ============================== */
+  --color-sidebar-bg: #1e293b;
+  --color-sidebar-text: #f1f5f9;
+  --color-sidebar-hover: #334155;
+  --color-sidebar-active: #3b82f6;
+  --color-sidebar-border: #334155;
+
+  /* ==============================
+     HEADER
+  ============================== */
+  --color-header-bg: #ffffff;
+  --color-header-border: #e2e8f0;
+  --color-header-text: #1e293b;
+
+  /* ==============================
+     DARK MODE
+  ============================== */
+  --color-dark-background: #0f172a;
+  --color-dark-surface: #1e293b;
+  --color-dark-border: #334155;
+  --color-dark-text: #f1f5f9;
+  --color-dark-text-muted: #94a3b8;
+  --color-dark-user-bubble: #2563eb;
+  --color-dark-bot-bubble: #1e293b;
+}
