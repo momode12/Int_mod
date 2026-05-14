@@ -11,3 +11,5 @@ from .chat_services import(
     HybridRetriever,
     ChatService,
 )
+
+from .conversation_services import ConversationService
