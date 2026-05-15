@@ -5,4 +5,5 @@ __pycache__/
 *.pyo
 .venv/
 venv/
-requirements.txt
+utils/
+requirements.txt/

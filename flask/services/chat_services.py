@@ -19,42 +19,48 @@ try:
 except ImportError:
     _DEPS_OK = False
 
+try:
+    from huggingface_hub import hf_hub_download
+    _HF_OK = True
+except ImportError:
+    _HF_OK = False
+
 NOMS_CAT = {
-    'areti-maso': 'areti-maso',
-    'aretim-po': 'aretim-po',
-    'aretin-doha': 'aretin-doha',
-    'aretin-kibo': 'aretin-kibo',
-    'aretin-pivalanana': 'aretin-pivalanana',
-    'aretin-tanana': 'aretin-tanana',
-    'aretin-tenda': 'aretin-tenda',
-    'aretin-tongotra': 'aretin-tongotra',
-    'aretin-tratra': 'aretin-tratra',
-    'aretin-tsaina': 'aretin-tsaina',
-    'aretin-urinaire': 'aretin-urinaire',
-    'diabeta': 'diabeta',
+    'areti-maso':           'areti-maso',
+    'aretim-po':            'aretim-po',
+    'aretin-doha':          'aretin-doha',
+    'aretin-kibo':          'aretin-kibo',
+    'aretin-pivalanana':    'aretin-pivalanana',
+    'aretin-tanana':        'aretin-tanana',
+    'aretin-tenda':         'aretin-tenda',
+    'aretin-tongotra':      'aretin-tongotra',
+    'aretin-tratra':        'aretin-tratra',
+    'aretin-tsaina':        'aretin-tsaina',
+    'aretin-urinaire':      'aretin-urinaire',
+    'diabeta':              'diabeta',
     'fiakaran-ny-tosi-dra': 'fiakaran-ny-tosi-dra',
-    'kohaka': 'kohaka',
-    'tazo': 'tazo',
-    'tazomoka': 'tazomoka',
+    'kohaka':               'kohaka',
+    'tazo':                 'tazo',
+    'tazomoka':             'tazomoka',
 }
 
 ICONES = {
-    'areti-maso': '👁',
-    'aretim-po': '❤️',
-    'aretin-doha': '🧠',
-    'aretin-kibo': '🤢',
-    'aretin-pivalanana': '🚽',
-    'aretin-tanana': '🤲',
-    'aretin-tenda': '🗯',
-    'aretin-tongotra': '🦶',
-    'aretin-tratra': '🫀',
-    'aretin-tsaina': '🧘',
-    'aretin-urinaire': '💧',
-    'diabeta': '💉',
+    'areti-maso':           '👁',
+    'aretim-po':            '❤️',
+    'aretin-doha':          '🧠',
+    'aretin-kibo':          '🤢',
+    'aretin-pivalanana':    '🚽',
+    'aretin-tanana':        '🤲',
+    'aretin-tenda':         '🗯',
+    'aretin-tongotra':      '🦶',
+    'aretin-tratra':        '🫀',
+    'aretin-tsaina':        '🧘',
+    'aretin-urinaire':      '💧',
+    'diabeta':              '💉',
     'fiakaran-ny-tosi-dra': '🩸',
-    'kohaka': '😮',
-    'tazo': '🌡',
-    'tazomoka': '🦟',
+    'kohaka':               '😮',
+    'tazo':                 '🌡',
+    'tazomoka':             '🦟',
 }
 
 SALUTATIONS = {
@@ -63,14 +69,14 @@ SALUTATIONS = {
         " Lazao amiko ny soritr'aretinao amin'ny teny malagasy.\n"
         " Ohatra: 'Marary ny lohako' na 'Voan'ny tazo aho'."
     ),
-    'manao ahoana': " Manao ahoana! Lazao amiko ny soritr'aretinao mba ahafahako manampy anao.",
-    'manahoana':    " Manahoana! Inona no azoko anampiana anao?",
-    'mbola tsara':  " Mbola tsara eh! Inona no azoko anampiana anao momban'ny fahasalamanao?",
-    'veloma':       " Veloma! Mirary fahasalamana ho anao aho. Mitandrema amin'ny lafiny rehetra!",
-    'misaotra':     " Misaotra betsaka! Faly hatrany aho manampy anao.",
+    'manao ahoana':     " Manao ahoana! Lazao amiko ny soritr'aretinao mba ahafahako manampy anao.",
+    'manahoana':        " Manahoana! Inona no azoko anampiana anao?",
+    'mbola tsara':      " Mbola tsara eh! Inona no azoko anampiana anao momban'ny fahasalamanao?",
+    'veloma':           " Veloma! Mirary fahasalamana ho anao aho. Mitandrema amin'ny lafiny rehetra!",
+    'misaotra':         " Misaotra betsaka! Faly hatrany aho manampy anao.",
     'misaotra betsaka': " Misaotra betsaka! Veloma ary tandremo ny fahasalamanao!",
-    'eny':          " Tsara! Azonao atao ny milaza fanazavana fanampiny.",
-    'tsia':         " Azo atao. Inona no mba hanampiako anao?",
+    'eny':              " Tsara! Azonao atao ny milaza fanazavana fanampiny.",
+    'tsia':             " Azo atao. Inona no mba hanampiako anao?",
     '/ampio': (
         " Torohevitra fampiasana:\n"
         " • Soraty ny soritr'aretinao amin'ny teny malagasy\n"
@@ -79,7 +85,8 @@ SALUTATIONS = {
 }
 
 MSG_LANGUE = (
-    " Azafady, resaho amin'ny malagasy ny momba ny fahasalamanao sy ny aretina mahazo anao."
+    " Azafady, resaho amin'ny malagasy ny momba ny fahasalamanao "
+    "sy ny aretina mahazo anao."
 )
 
 MSGS_GIB = [
@@ -102,7 +109,8 @@ SYMPTOMES_GRAVES = [
 
 MSG_URGENCE = (
     " SORITR-ARETINA MAFY! MANDEHANA ANY AMIN-NY HOPITALY HAINGANA! \n"
-    "Ity soritr-aretina ity dia mahafaty haingana aza miandry ela intsony, mandehana hopitaly izao!"
+    "Ity soritr-aretina ity dia mahafaty haingana aza miandry ela intsony, "
+    "mandehana hopitaly izao!"
 )
 
 VOYELLES = set('aeiouàâäéèêëîïôùûü')
@@ -137,6 +145,36 @@ MOTS_HORS_CORE = {
     'sekoly', 'oniversite', 'politika', 'fifidianana',
 }
 
+_ARTEFACTS = [
+    "pipeline.pkl",
+    "encoder.pkl",
+    "retriever_tfidf.pkl",
+    "dataset_clean.csv",
+]
+
+def _download_models_if_needed(model_dir: str, repo_id: str) -> None:
+
+    if not _HF_OK:
+        print("huggingface_hub non installé — pip install huggingface_hub")
+        return
+
+    os.makedirs(model_dir, exist_ok=True)
+
+    for fichier in _ARTEFACTS:
+        dest = os.path.join(model_dir, fichier)
+        if not os.path.exists(dest):
+            print(f"⬇Téléchargement {fichier} depuis HuggingFace...")
+            try:
+                hf_hub_download(
+                    repo_id   = repo_id,
+                    filename  = fichier,
+                    local_dir = model_dir,
+                )
+                print(f"{fichier} prêt")
+            except Exception as e:
+                print(f"Erreur téléchargement {fichier} : {e}")
+        else:
+            print(f"{fichier} déjà présent")
 
 class MalagasyTokenizer:
     SYNONYMES = {
@@ -181,7 +219,7 @@ class MalagasyTokenizer:
 
     def expand(self, text: str) -> str:
         tokens = self.tokenize(text)
-        extra = []
+        extra  = []
         for tok in tokens:
             for key, syns in self.SYNONYMES.items():
                 if tok == key or tok in syns:
@@ -193,12 +231,12 @@ class MalagasyTokenizer:
 
 class HybridRetriever:
     def __init__(self, df, tok: MalagasyTokenizer, tfidf_vec):
-        self.df   = df.reset_index(drop=True)
-        self.tok  = tok
+        self.df    = df.reset_index(drop=True)
+        self.tok   = tok
         corpus_tok = [tok.tokenize(str(t)) for t in df['texte']]
-        self.bm25 = BM25Okapi(corpus_tok)
-        self.vec  = tfidf_vec
-        self.mat  = self.vec.transform(
+        self.bm25  = BM25Okapi(corpus_tok)
+        self.vec   = tfidf_vec
+        self.mat   = self.vec.transform(
             [tok.clean(str(t)) for t in df['texte']]
         )
 
@@ -214,9 +252,9 @@ class HybridRetriever:
         if category:
             mask = (self.df['cat_base'] == category).values
             if mask.sum() > 0:
-                s2         = score.copy()
+                s2        = score.copy()
                 s2[~mask] *= 0.25
-                idx        = int(s2.argmax())
+                idx       = int(s2.argmax())
             else:
                 idx = int(score.argmax())
         else:
@@ -229,6 +267,7 @@ def _vowel_ratio(word: str) -> float:
         return 0.0
     return sum(1 for c in word if c in VOYELLES) / len(word)
 
+
 def _max_cons_run(word: str) -> int:
     run = mx = 0
     for c in word:
@@ -239,12 +278,14 @@ def _max_cons_run(word: str) -> int:
             run  = 0
     return mx
 
+
 def _entropy(word: str) -> float:
     if not word:
         return 0.0
     c = Counter(word)
     l = len(word)
     return -sum((v / l) * math.log2(v / l) for v in c.values())
+
 
 def _is_gib_word(w: str) -> bool:
     w = w.lower()
@@ -262,12 +303,14 @@ def _is_gib_word(w: str) -> bool:
         return True
     return False
 
+
 def is_gibberish(text: str) -> bool:
     words = re.findall(r'[a-zA-Z]{4,}', text.lower())
     if not words:
         return False
     n_gib = sum(1 for w in words if _is_gib_word(w))
     return n_gib / len(words) > 0.50
+
 
 def detect_language(text: str) -> str | None:
     if re.search(r'[\u0400-\u04FF\u0600-\u06FF\u4E00-\u9FFF\u3040-\u30FF]', text):
@@ -288,6 +331,7 @@ def detect_language(text: str) -> str | None:
         return 'autre'
     return None
 
+
 def is_hors_domaine(text: str) -> bool:
     words = set(text.lower().split())
     if words & MOTS_HORS_CORE:
@@ -295,6 +339,7 @@ def is_hors_domaine(text: str) -> bool:
     if len(words) > 2 and not (words & MOTS_MG_CORE):
         return True
     return False
+
 
 def detect_salutation(text: str) -> str | None:
     t = text.lower().strip()
@@ -304,6 +349,7 @@ def detect_salutation(text: str) -> str | None:
         if len(key) > 3 and (t == key or t.startswith(key) or key in t):
             return SALUTATIONS[key]
     return None
+
 
 def check_grave(text: str) -> str | None:
     t = text.lower()
@@ -331,6 +377,7 @@ def build_response(category: str, med1: str, med2: str, astuce: str) -> str:
     parties.append("Ka raha tena tsy mijanona ny aretina, mitsangana mandehana dokotera.")
     return ' '.join(parties)
 
+
 def _indicator(conf: float) -> str:
     if conf >= CONF_MED:
         return "green"
@@ -343,28 +390,28 @@ class ChatService:
     _instance: "ChatService | None" = None
 
     def __init__(self):
-        self._ready    = False
-        self._pipeline = None
-        self._le       = None
+        self._ready     = False
+        self._pipeline  = None
+        self._le        = None
         self._retriever: HybridRetriever | None = None
-        self._tok      = MalagasyTokenizer()
-        self._idx2cat: dict[int, str] = {}
+        self._tok       = MalagasyTokenizer()
+        self._idx2cat:  dict[int, str] = {}
 
-        model_dir = os.getenv("CHATBOT_MODEL_DIR", "")
-        if not model_dir:
-            print("CHATBOT_MODEL_DIR non défini mode fallback")
-            return
+        model_dir = os.getenv("CHATBOT_MODEL_DIR", "utils")
+        repo_id   = os.getenv("HF_REPO_ID", "")
 
-        path = Path(model_dir)
-        required = ["pipeline.pkl", "encoder.pkl",
-                    "retriever_tfidf.pkl", "dataset_clean.csv"]
-        missing = [f for f in required if not (path / f).exists()]
+        if repo_id:
+            _download_models_if_needed(model_dir, repo_id)
+
+        path    = Path(model_dir)
+        missing = [f for f in _ARTEFACTS if not (path / f).exists()]
+
         if missing:
-            print(f"Attention artefacts manquants {missing} — mode fallback")
+            print(f"Artefacts manquants {missing} — mode fallback")
             return
 
         if not _DEPS_OK:
-            print("Attention dépendances ML manquantes (pandas/rank_bm25) — mode fallback")
+            print("Dépendances ML manquantes (pandas/rank_bm25) — mode fallback")
             return
 
         try:
@@ -373,7 +420,7 @@ class ChatService:
             with open(path / "encoder.pkl",         "rb") as f:
                 self._le       = pickle.load(f)
             with open(path / "retriever_tfidf.pkl", "rb") as f:
-                tfidf_vec = pickle.load(f)
+                tfidf_vec      = pickle.load(f)
 
             df = pd.read_csv(path / "dataset_clean.csv", encoding="utf-8")
             for col in ["texte", "medicament1", "medicament2", "astuce", "cat_base"]:
@@ -388,7 +435,7 @@ class ChatService:
             print(f"ChatService prêt — {len(df)} docs, {len(self._le.classes_)} classes")
 
         except Exception as exc:
-            print(f"Erreur chargement modèle: {exc} — mode fallback")
+            print(f"Erreur chargement modèle : {exc} — mode fallback")
 
     @classmethod
     def get(cls) -> "ChatService":
@@ -401,7 +448,7 @@ class ChatService:
         ui = (user_input or "").strip()
 
         if not ui:
-            return self._special("empty", "Mba soraty zavatra...")
+            return self._special("empty", "Mba soraty mazava tompoko oh ...")
         if len(ui) < 5:
             return self._special("too_short", "Mba omeo fanazavana fanampiny.")
 
@@ -439,9 +486,11 @@ class ChatService:
 
         top_idx = probs.argsort()[-3:][::-1]
         top3    = [
-            {"categorie": self._idx2cat[i],
-             "icon":      ICONES.get(self._idx2cat[i], "🏥"),
-             "score":     round(float(probs[i]), 3)}
+            {
+                "categorie": self._idx2cat[i],
+                "icon":      ICONES.get(self._idx2cat[i], "🏥"),
+                "score":     round(float(probs[i]), 3),
+            }
             for i in top_idx
         ]
 
@@ -450,12 +499,13 @@ class ChatService:
         if conf < CONF_LOW and sim < SIM_LOW and not alerte:
             return self._special("hors_domaine", random.choice(MSGS_HORS), ood=True)
 
-        m1    = str(row.get("medicament1", "")).strip()
-        m2    = str(row.get("medicament2", "")).strip()
+        m1     = str(row.get("medicament1", "")).strip()
+        m2     = str(row.get("medicament2", "")).strip()
         astuce = str(row.get("astuce", "")).strip()
-        for v in (m1, m2, astuce):
-            if v.lower() in ("nan", "none"):
-                v = ""
+
+        m1     = "" if m1.lower()     in ("nan", "none") else m1
+        m2     = "" if m2.lower()     in ("nan", "none") else m2
+        astuce = "" if astuce.lower() in ("nan", "none") else astuce
 
         generated = build_response(cat, m1, m2, astuce)
         icon      = ICONES.get(cat, "🏥")
@@ -470,8 +520,8 @@ class ChatService:
             "confidence":  round(conf * 100, 1),
             "indicator":   indicator,
             "tfidf_sim":   round(sim, 4),
-            "medicament1": m1 or None,
-            "medicament2": m2 or None,
+            "medicament1": m1     or None,
+            "medicament2": m2     or None,
             "astuce":      astuce or None,
             "generated":   (alerte + "\n\n" + generated) if alerte else generated,
             "top3":        top3,
@@ -485,9 +535,9 @@ class ChatService:
         type_: str,
         generated: str,
         *,
-        alerte: str | None = None,
+        alerte: str | None   = None,
         fallback: str | None = None,
-        ood: bool = False,
+        ood: bool            = False,
     ) -> dict:
         return {
             "type":        type_,
