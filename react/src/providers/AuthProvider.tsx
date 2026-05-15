@@ -24,6 +24,15 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(getInitialUser);
   const [isLoading, setIsLoading] = useState(false);
 
+  const setUserValue = (next: User | null) => {
+    if (next) {
+      localStorage.setItem("user", JSON.stringify(next));
+    } else {
+      localStorage.removeItem("user");
+    }
+    setUser(next);
+  };
+
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
@@ -34,8 +43,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
       );
 
       localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      setUser(data.user);
+      setUserValue(data.user);
 
     } finally {
       setIsLoading(false);
@@ -52,8 +60,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
       );
 
       localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      setUser(data.user);
+      setUserValue(data.user);
 
     } finally {
       setIsLoading(false);
@@ -61,9 +68,8 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem("user");
     localStorage.removeItem("token");
-    setUser(null);
+    setUserValue(null);
   };
 
   const value: AuthContextType = {
@@ -72,6 +78,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     isLoading,
     login,
     register,
+    setUser: setUserValue,
     logout,
   };
 

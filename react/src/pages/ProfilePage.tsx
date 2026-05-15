@@ -9,10 +9,11 @@ import Input from "../components/ui/input";
 import Avatar from "../components/ui/avatar";
 import Separator from "../components/ui/separator";
 import { ArrowLeft, LogOut } from "lucide-react";
+import { api } from "../utils/api";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, setUser } = useAuth();
 
   const [form, setForm] = useState({
     name:  user?.name  ?? "",
@@ -23,9 +24,21 @@ const ProfilePage = () => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast("Voaova ny mombamomba !", "success");
+    try {
+      const data = await api.put<{
+        message: string;
+        user: { id: string; name: string; email: string };
+      }>("/user/profile", {
+        name: form.name,
+        email: form.email,
+      });
+      setUser({ ...user!, ...data.user });
+      toast("Voaova ny mombamomba !", "success");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Erreur mise à jour profil", "error");
+    }
   };
 
   const handleLogout = async () => {
