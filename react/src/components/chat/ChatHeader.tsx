@@ -1,10 +1,12 @@
 import { useAuth } from "../../hooks/useAuth";
 import { useUIStore } from "../../store/uiStore";
 import { Menu, Moon, Sun, LogOut } from "lucide-react";
+import { useThemeContext } from "../../providers/themeContext";
 
 const ChatHeader = () => {
   const { user, logout } = useAuth();
-  const { theme, toggleTheme, toggleSidebar } = useUIStore();
+  const { theme, toggleTheme } = useThemeContext();
+  const { toggleSidebar } = useUIStore();
 
   return (
     <header className="
