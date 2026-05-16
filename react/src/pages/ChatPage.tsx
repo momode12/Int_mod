@@ -5,10 +5,8 @@ import ChatInput from "../components/chat/ChatInput";
 const ChatPage = () => {
   return (
     <ChatLayout>
-      {/* Faritra hafatra */}
       <ChatWindow />
 
-      {/* Faritra fanoratana */}
       <ChatInput />
     </ChatLayout>
   );
