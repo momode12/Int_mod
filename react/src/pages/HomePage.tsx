@@ -24,12 +24,12 @@ const HomePage = () => {
           </div>
           <div className="flex items-center gap-2">
             {isAuthenticated ? (
-              <Button onClick={() => navigate("/chat")}>
+              <Button  onClick={() => navigate("/chat")}>
                 Hiditra amin'ny resaka
               </Button>
             ) : (
               <>
-                <Button variant="ghost" className="cursor-pointer" onClick={() => navigate("/login")}>
+                <Button variant="outline" className="cursor-pointer" onClick={() => navigate("/login")}>
                   Hiditra
                 </Button>
                 <Button className="cursor-pointer" onClick={() => navigate("/register")}>

@@ -6,7 +6,7 @@ const Footer = () => {
       py-3 px-6 shrink-0
     ">
       <p className="text-xs text-center text-secondary-500 dark:text-dark-text-muted">
-        © {new Date().getFullYear()} ChatBot IA — Tous droits réservés
+        © {new Date().getFullYear()} ChatBot IA momba ny fahasalamana Malagasy — Voatokana avokoa ny zo rehetra
       </p>
     </footer>
   );

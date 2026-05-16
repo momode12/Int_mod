@@ -1,8 +1,9 @@
 import bcrypt
 import jwt
-from datetime import datetime, timedelta
-from bson import ObjectId
+from datetime import datetime, timedelta, timezone
 from config import Config
+
+EAT = timezone(timedelta(hours=3)) 
 
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(
@@ -10,7 +11,6 @@ def hash_password(password: str) -> str:
         bcrypt.gensalt()
     ).decode("utf-8")
     
-
 def verify_password(password: str, hashed: str) -> bool:
     if not isinstance(password, str):
         raise ValueError("Mot de passe invalide")
@@ -23,7 +23,7 @@ def verify_password(password: str, hashed: str) -> bool:
 def generate_token(user_id: str) -> str:
     payload = {
         "user_id": user_id,
-        "exp":     datetime.utcnow() + timedelta(seconds=Config.JWT_EXPIRATION)
+        "exp":     datetime.now(EAT) + timedelta(seconds=Config.JWT_EXPIRATION)
     }
     return jwt.encode(payload, Config.JWT_SECRET, algorithm="HS256")
 
@@ -37,7 +37,6 @@ def decode_token(token: str) -> dict:
 def register_user(db, name: str, email: str, password: str) -> dict:
     from models.user_models import user_schema
 
-    # ✅ Vérifier email existant
     existing = db.users.find_one({"email": email})
     if existing:
         raise ValueError("Email déjà utilisé")

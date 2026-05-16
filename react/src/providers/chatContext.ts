@@ -11,6 +11,8 @@ export interface Conversation {
   id: string;
   title: string;
   messages: Message[];
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface ChatContextType {
@@ -19,8 +21,9 @@ export interface ChatContextType {
   messages: Message[];
   isTyping: boolean;
   sendMessage: (content: string) => Promise<void>;
-  newConversation: () => void;
-  selectConversation: (id: string) => void;
+  newConversation: () => Promise<void>;
+  selectConversation: (id: string) => Promise<void>;
+  deleteConversation: (id: string) => Promise<boolean>;
 }
 
 export const ChatContext = createContext<ChatContextType | undefined>(undefined);

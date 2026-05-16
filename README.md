@@ -4,11 +4,7 @@ Chatbot médical conversationnel en langue malagasy, basé sur un modèle NLP (T
 
 ## ⚙️ Prérequis
 
-| Outil 
-| Python | 3.10+ | https://python.org |
-| Node.js | 18+ | https://nodejs.org |
-| MongoDB | 6+ | https://www.mongodb.com |
-| Google Colab | — | https://colab.research.google.com |
+Outil : Python 3.10+ https://python.org,  Node.js 18+  https://nodejs.org, MongoDB 6+ https://www.mongodb.com, Google Colab https://colab.research.google.com 
 
 ## 🤖 Étape 1 — Entraîner le modèle NLP (Google Colab)
 

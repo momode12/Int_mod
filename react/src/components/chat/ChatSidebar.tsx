@@ -27,7 +27,7 @@ const ChatSidebar = () => {
       >
         {/* Header sidebar */}
         <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
-          <h2 className="text-sidebar-text font-semibold text-sm">Conversations</h2>
+          <h2 className="text-sidebar-text font-semibold text-sm">Resadresaka</h2>
           <button
             onClick={() => setSidebarOpen(false)}
             className="text-sidebar-text hover:text-white lg:hidden"
@@ -36,7 +36,7 @@ const ChatSidebar = () => {
           </button>
         </div>
 
-        {/* Nouvelle conversation */}
+        {/* Resaka vaovao */}
         <div className="p-3">
           <button
             onClick={newConversation}
@@ -47,7 +47,7 @@ const ChatSidebar = () => {
             "
           >
             <Plus size={16} />
-            Nouvelle conversation
+            Resaka vaovao
           </button>
         </div>
 

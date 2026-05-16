@@ -36,11 +36,11 @@ const ChatInput = () => {
         </button>
       </div>
       <p className="text-xs text-center text-secondary-400 dark:text-dark-text-muted mt-2">
-        Tsindrio{" "}
+        Afaka manao hadisoana ny {" "}
         <kbd className="px-1 py-0.5 rounded bg-secondary-100 dark:bg-dark-surface text-xs">
-          Fidirana
+          Chat bot médical Malagasy 
         </kbd>{" "}
-        handefa
+        fa manantona ihany dokotera.
       </p>
     </div>
   );
