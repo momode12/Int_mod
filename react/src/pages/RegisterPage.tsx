@@ -49,7 +49,7 @@ const RegisterPage = () => {
     try {
       await register(form.name, form.email, form.password);
       toast("Vita ny fanoratana anarana !", "success");
-      navigate("/chat");
+       navigate("/login");
     } catch (error: unknown) {
       const message =
         error instanceof Error

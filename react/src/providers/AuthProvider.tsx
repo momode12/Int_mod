@@ -50,22 +50,26 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const register = async (name: string, email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      // ✅ Utilise api.ts — URL centralisée
-      const data = await api.post<{ token: string; user: User }>(
-        "/auth/register",
-        { name, email, password }
-      );
+const register = async (name: string, email: string, password: string) => {
+  setIsLoading(true);
 
-      localStorage.setItem("token", data.token);
-      setUserValue(data.user);
+  try {
+    await api.post("/auth/register", {
+      name,
+      email,
+      password,
+    });
 
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    // ❌ enlever :
+    // setUserValue(data.user);
+
+    // ❌ enlever aussi si présent :
+    // localStorage.setItem("token", data.token);
+
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const logout = () => {
     localStorage.removeItem("token");
